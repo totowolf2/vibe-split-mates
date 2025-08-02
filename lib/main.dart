@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'providers/bill_provider.dart';
 import 'utils/constants.dart';
 import 'widgets/add_person_dialog.dart';
+import 'widgets/edit_person_dialog.dart';
 import 'widgets/add_item_dialog.dart';
 import 'widgets/item_card.dart';
 import 'widgets/person_avatar.dart';
@@ -534,7 +535,7 @@ class _PeopleSection extends StatelessWidget {
                   style: AppTextStyles.subHeaderStyle,
                 ),
                 const SizedBox(height: AppConstants.defaultPadding),
-                if (billProvider.people.isEmpty)
+                if (billProvider.savedPeople.isEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(AppConstants.largePadding),
@@ -548,44 +549,8 @@ class _PeopleSection extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // People in current bill
-                      if (billProvider.people.isNotEmpty) ...[
-                        Text(
-                          'ในบิลนี้:',
-                          style: AppTextStyles.captionStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: AppConstants.smallPadding),
-                        Wrap(
-                          spacing: AppConstants.smallPadding,
-                          runSpacing: AppConstants.smallPadding,
-                          children: billProvider.people.map((person) {
-                            return Chip(
-                              avatar: PersonAvatar(person: person, size: 32, showBorder: false),
-                              label: Text(person.name),
-                              deleteIcon: const Icon(Icons.close, size: 16),
-                              onDeleted: () {
-                                billProvider.removePersonFromBill(person.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'ลบ ${person.name} ออกจากบิล',
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      ],
-
-                      // Saved people not in current bill
-                      if (billProvider.savedPeople.isNotEmpty) ...[
-                        if (billProvider.people.isNotEmpty)
-                          const SizedBox(height: AppConstants.defaultPadding),
-
-                        Text(
+                      // All saved people
+                      Text(
                           'คนที่บันทึกไว้:',
                           style: AppTextStyles.captionStyle.copyWith(
                             fontWeight: FontWeight.w600,
@@ -595,17 +560,39 @@ class _PeopleSection extends StatelessWidget {
                         Wrap(
                           spacing: AppConstants.smallPadding,
                           runSpacing: AppConstants.smallPadding,
-                          children: billProvider.savedPeople
-                              .where(
-                                (person) => !billProvider.people.any(
-                                  (p) => p.id == person.id,
-                                ),
-                              )
-                              .map((person) {
-                                return ActionChip(
-                                  avatar: PersonAvatar(person: person, size: 32, showBorder: false),
-                                  label: Text(person.name),
-                                  onPressed: () {
+                          children: billProvider.savedPeople.map((person) {
+                            final isInBill = billProvider.people.any((p) => p.id == person.id);
+                            return GestureDetector(
+                              onTap: () {
+                                if (isInBill) {
+                                  billProvider.removePersonFromBill(person.id);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'ลบ ${person.name} ออกจากบิล',
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  billProvider.addPersonToBill(person);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'เพิ่ม ${person.name} เข้าบิล',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              onLongPress: () {
+                                _showPersonOptions(context, person, billProvider);
+                              },
+                              child: FilterChip(
+                                avatar: PersonAvatar(person: person, size: 32, showBorder: false),
+                                label: Text(person.name),
+                                selected: isInBill,
+                                onSelected: (selected) {
+                                  if (selected) {
                                     billProvider.addPersonToBill(person);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -614,12 +601,32 @@ class _PeopleSection extends StatelessWidget {
                                         ),
                                       ),
                                     );
-                                  },
-                                );
-                              })
-                              .toList(),
+                                  } else {
+                                    billProvider.removePersonFromBill(person.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'ลบ ${person.name} ออกจากบิล',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                selectedColor: AppConstants.primaryColor.withValues(alpha: 0.3),
+                                checkmarkColor: AppConstants.primaryColor,
+                              ),
+                            );
+                          }).toList(),
                         ),
-                      ],
+                        const SizedBox(height: AppConstants.smallPadding),
+                        Text(
+                          'แตะเพื่อเพิ่ม/ลบจากบิล • กดค้างเพื่อแก้ไขหรือลบ',
+                          style: AppTextStyles.captionStyle.copyWith(
+                            color: Colors.grey.shade600,
+                            fontSize: 11,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                     ],
                   ),
               ],
@@ -628,6 +635,116 @@ class _PeopleSection extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _showPersonOptions(BuildContext context, Person person, BillProvider billProvider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: PersonAvatar(person: person, size: 40),
+              title: Text(person.name, style: AppTextStyles.subHeaderStyle),
+              subtitle: Text('ตัวเลือก', style: AppTextStyles.captionStyle),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blue),
+              title: const Text('แก้ไขข้อมูล'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _editPerson(context, person, billProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('ลบ', style: TextStyle(color: Colors.red)),
+              onTap: () async {
+                Navigator.pop(context);
+                await _deletePerson(context, person, billProvider);
+              },
+            ),
+            const SizedBox(height: AppConstants.smallPadding),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editPerson(BuildContext context, Person person, BillProvider billProvider) async {
+    final updatedPerson = await showDialog<Person>(
+      context: context,
+      builder: (context) => EditPersonDialog(
+        person: person,
+        existingPeople: billProvider.savedPeople,
+      ),
+    );
+
+    if (updatedPerson != null) {
+      final success = await billProvider.updateSavedPerson(updatedPerson);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success 
+              ? 'แก้ไขข้อมูล ${updatedPerson.name} เรียบร้อย'
+              : 'ไม่สามารถแก้ไขข้อมูลได้ อาจมีชื่อซ้ำ'),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deletePerson(BuildContext context, Person person, BillProvider billProvider) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ลบข้อมูลส่วนตัว'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PersonAvatar(person: person, size: 60),
+            const SizedBox(height: AppConstants.defaultPadding),
+            Text('ต้องการลบ "${person.name}" หรือไม่?'),
+            const SizedBox(height: AppConstants.smallPadding),
+            Text(
+              'การลบจะส่งผลต่อรายการที่ ${person.name} เป็นคนแชร์',
+              style: AppTextStyles.captionStyle.copyWith(
+                color: Colors.orange.shade700,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await billProvider.removeSavedPerson(person.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success 
+              ? 'ลบ ${person.name} เรียบร้อย'
+              : 'ไม่สามารถลบได้'),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

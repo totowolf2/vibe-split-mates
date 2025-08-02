@@ -100,8 +100,7 @@ class BillProvider with ChangeNotifier {
                     .toList();
                 return item.copyWith(ownerIds: updatedOwners);
               })
-              .where((item) => item.ownerIds.isNotEmpty)
-              .toList(); // Remove items with no owners
+              .toList(); // Keep items even if they have no owners
 
           _currentBill = _currentBill!.copyWith(
             people: updatedPeople,
@@ -114,6 +113,43 @@ class BillProvider with ChangeNotifier {
       return success;
     } catch (e) {
       debugPrint('Error removing saved person: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateSavedPerson(Person updatedPerson) async {
+    try {
+      // Check if a different person with the same name already exists
+      if (_savedPeople.any(
+        (p) =>
+            p.id != updatedPerson.id &&
+            p.name.toLowerCase() == updatedPerson.name.toLowerCase(),
+      )) {
+        return false;
+      }
+
+      final success = await _persistenceService.updatePerson(updatedPerson);
+      if (success) {
+        final index = _savedPeople.indexWhere((p) => p.id == updatedPerson.id);
+        if (index != -1) {
+          _savedPeople[index] = updatedPerson;
+        }
+
+        // Also update in current bill if present
+        if (_currentBill != null) {
+          final billPersonIndex = _currentBill!.people.indexWhere((p) => p.id == updatedPerson.id);
+          if (billPersonIndex != -1) {
+            final updatedPeople = [..._currentBill!.people];
+            updatedPeople[billPersonIndex] = updatedPerson;
+            _currentBill = _currentBill!.copyWith(people: updatedPeople);
+          }
+        }
+
+        notifyListeners();
+      }
+      return success;
+    } catch (e) {
+      debugPrint('Error updating saved person: $e');
       return false;
     }
   }
@@ -144,8 +180,7 @@ class BillProvider with ChangeNotifier {
               .toList();
           return item.copyWith(ownerIds: updatedOwners);
         })
-        .where((item) => item.ownerIds.isNotEmpty)
-        .toList(); // Remove items with no owners
+        .toList(); // Keep items even if they have no owners
 
     _currentBill = _currentBill!.copyWith(
       people: updatedPeople,
