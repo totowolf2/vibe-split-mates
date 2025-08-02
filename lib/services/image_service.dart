@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
+import '../widgets/custom_crop_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../utils/constants.dart';
@@ -51,48 +51,16 @@ class ImageService {
     }
   }
 
-  /// Crop image for better OCR results
-  static Future<File?> cropImage(File imageFile) async {
+  /// Crop image for better OCR results using custom crop widget
+  static Future<File?> cropImage(File imageFile, BuildContext context) async {
     try {
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: imageFile.path,
-        compressFormat: ImageCompressFormat.jpg,
-        compressQuality: 90,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'ครอบรูปใบเสร็จ',
-            toolbarColor: AppConstants.primaryColor,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false,
-            aspectRatioPresets: [
-              CropAspectRatioPreset.original,
-              CropAspectRatioPreset.square,
-              CropAspectRatioPreset.ratio3x2,
-              CropAspectRatioPreset.ratio4x3,
-              CropAspectRatioPreset.ratio16x9,
-            ],
-            showCropGrid: true,
-            hideBottomControls: false,
-            cropGridStrokeWidth: 1,
-            cropGridColor: AppConstants.primaryColor,
-            activeControlsWidgetColor: AppConstants.primaryColor,
+      final croppedFile = await Navigator.of(context).push<File>(
+        MaterialPageRoute(
+          builder: (context) => CustomCropWidget(
+            imageFile: imageFile,
+            title: 'ครอบรูปใบเสร็จ - วาดกรอบรอบส่วนที่ต้องการ',
           ),
-          IOSUiSettings(
-            title: 'ครอบรูปใบเสร็จ',
-            doneButtonTitle: 'เสร็จ',
-            cancelButtonTitle: 'ยกเลิก',
-            aspectRatioLockEnabled: false,
-            resetAspectRatioEnabled: true,
-            aspectRatioPresets: [
-              CropAspectRatioPreset.original,
-              CropAspectRatioPreset.square,
-              CropAspectRatioPreset.ratio3x2,
-              CropAspectRatioPreset.ratio4x3,
-              CropAspectRatioPreset.ratio16x9,
-            ],
-          ),
-        ],
+        ),
       );
 
       if (croppedFile == null) {
@@ -106,7 +74,7 @@ class ImageService {
         print('Image cropped: ${croppedFile.path}');
       }
 
-      return File(croppedFile.path);
+      return croppedFile;
     } catch (e) {
       if (kDebugMode) {
         print('Error cropping image: $e');
@@ -118,14 +86,18 @@ class ImageService {
   /// Pick and crop image in one flow
   static Future<File?> pickAndCropImage({
     ImageSource source = ImageSource.gallery,
+    required BuildContext context,
   }) async {
     try {
       // Pick image
       final pickedImage = await pickImage(source: source);
       if (pickedImage == null) return null;
 
+      // Check if context is still mounted before using it
+      if (!context.mounted) return null;
+
       // Crop image
-      final croppedImage = await cropImage(pickedImage);
+      final croppedImage = await cropImage(pickedImage, context);
 
       // Clean up original picked image if different from cropped
       if (croppedImage != null && croppedImage.path != pickedImage.path) {
