@@ -46,17 +46,20 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
   }
 
   void _onPanStart(DragStartDetails details) {
+    final clampedStart = _clampToImageBounds(details.localPosition);
     setState(() {
-      _startPoint = details.localPosition;
+      _startPoint = clampedStart;
       _isDrawing = true;
-      _cropRect = null;
+      _cropRect = Rect
+          .zero; // This will hide the tip immediately when user starts drawing
     });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
     if (_startPoint != null) {
+      final clampedEnd = _clampToImageBounds(details.localPosition);
       setState(() {
-        _endPoint = details.localPosition;
+        _endPoint = clampedEnd;
         _cropRect = Rect.fromPoints(_startPoint!, _endPoint!);
       });
     }
@@ -77,12 +80,34 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
     });
   }
 
+  /// Clamp touch position to image bounds
+  Offset _clampToImageBounds(Offset position) {
+    if (_imageDisplaySize == Size.zero || _imageOffset == Offset.zero) {
+      return position;
+    }
+
+    final imageRect = Rect.fromLTWH(
+      _imageOffset.dx,
+      _imageOffset.dy,
+      _imageDisplaySize.width,
+      _imageDisplaySize.height,
+    );
+
+    return Offset(
+      position.dx.clamp(imageRect.left, imageRect.right),
+      position.dy.clamp(imageRect.top, imageRect.bottom),
+    );
+  }
+
   Future<File?> _cropAndSave() async {
     if (_cropRect == null || _image == null) return null;
 
     try {
       // Calculate the scale factors
-      final imageSize = Size(_image!.width.toDouble(), _image!.height.toDouble());
+      final imageSize = Size(
+        _image!.width.toDouble(),
+        _image!.height.toDouble(),
+      );
       final scaleX = imageSize.width / _imageDisplaySize.width;
       final scaleY = imageSize.height / _imageDisplaySize.height;
 
@@ -98,14 +123,20 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
       final clampedRect = Rect.fromLTWH(
         adjustedCropRect.left.clamp(0.0, imageSize.width),
         adjustedCropRect.top.clamp(0.0, imageSize.height),
-        adjustedCropRect.width.clamp(0.0, imageSize.width - adjustedCropRect.left),
-        adjustedCropRect.height.clamp(0.0, imageSize.height - adjustedCropRect.top),
+        adjustedCropRect.width.clamp(
+          0.0,
+          imageSize.width - adjustedCropRect.left,
+        ),
+        adjustedCropRect.height.clamp(
+          0.0,
+          imageSize.height - adjustedCropRect.top,
+        ),
       );
 
       // Create cropped image
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
-      
+
       canvas.drawImageRect(
         _image!,
         clampedRect,
@@ -120,11 +151,15 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
       );
 
       // Convert to bytes and save
-      final byteData = await croppedImage.toByteData(format: ui.ImageByteFormat.png);
+      final byteData = await croppedImage.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       final bytes = byteData!.buffer.asUint8List();
 
       final tempDir = await getTemporaryDirectory();
-      final croppedFile = File('${tempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.png');
+      final croppedFile = File(
+        '${tempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
       await croppedFile.writeAsBytes(bytes);
 
       return croppedFile;
@@ -139,10 +174,7 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text(widget.title, style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -153,23 +185,25 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
               tooltip: 'เริ่มใหม่',
             ),
           TextButton(
-            onPressed: _cropRect != null ? () async {
-              // Show loading
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-              );
+            onPressed: _cropRect != null
+                ? () async {
+                    // Show loading
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    );
 
-              final croppedFile = await _cropAndSave();
-              
-              if (context.mounted) {
-                Navigator.of(context).pop(); // Close loading
-                Navigator.of(context).pop(croppedFile); // Return result
-              }
-            } : null,
+                    final croppedFile = await _cropAndSave();
+
+                    if (context.mounted) {
+                      Navigator.of(context).pop(); // Close loading
+                      Navigator.of(context).pop(croppedFile); // Return result
+                    }
+                  }
+                : null,
             child: Text(
               'เสร็จ',
               style: TextStyle(
@@ -187,9 +221,9 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   color: Colors.black87,
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Text(
+                      const Text(
                         '✨ วาดกรอบรอบส่วนที่ต้องการ',
                         style: TextStyle(
                           color: Colors.white,
@@ -197,75 +231,175 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'ลากนิ้วจากมุมหนึ่งไปอีกมุมหนึ่งเพื่อวาดกรอบ',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
+                      const SizedBox(height: 8),
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.touch_app,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'ลากนิ้วจากมุมหนึ่งไปอีกมุมหนึ่งเพื่อวาดกรอบ',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Row(
+                        children: [
+                          Icon(Icons.crop, color: Colors.white70, size: 16),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'เลือกเฉพาะส่วนใบเสร็จ หลีกเลี่ยงพื้นหลัง',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Row(
+                        children: [
+                          Icon(Icons.refresh, color: Colors.white70, size: 16),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'กดรีเฟรชเพื่อเริ่มวาดใหม่',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Image with crop overlay
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (_image == null) return const SizedBox();
+                  child: Stack(
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (_image == null) return const SizedBox();
 
-                      // Calculate image display size and position
-                      final imageAspectRatio = _image!.width / _image!.height;
-                      final containerAspectRatio = constraints.maxWidth / constraints.maxHeight;
+                          // Calculate image display size and position
+                          final imageAspectRatio =
+                              _image!.width / _image!.height;
+                          final containerAspectRatio =
+                              constraints.maxWidth / constraints.maxHeight;
 
-                      if (imageAspectRatio > containerAspectRatio) {
-                        // Image is wider than container
-                        _imageDisplaySize = Size(
-                          constraints.maxWidth,
-                          constraints.maxWidth / imageAspectRatio,
-                        );
-                      } else {
-                        // Image is taller than container
-                        _imageDisplaySize = Size(
-                          constraints.maxHeight * imageAspectRatio,
-                          constraints.maxHeight,
-                        );
-                      }
+                          if (imageAspectRatio > containerAspectRatio) {
+                            // Image is wider than container
+                            _imageDisplaySize = Size(
+                              constraints.maxWidth,
+                              constraints.maxWidth / imageAspectRatio,
+                            );
+                          } else {
+                            // Image is taller than container
+                            _imageDisplaySize = Size(
+                              constraints.maxHeight * imageAspectRatio,
+                              constraints.maxHeight,
+                            );
+                          }
 
-                      _imageOffset = Offset(
-                        (constraints.maxWidth - _imageDisplaySize.width) / 2,
-                        (constraints.maxHeight - _imageDisplaySize.height) / 2,
-                      );
+                          _imageOffset = Offset(
+                            (constraints.maxWidth - _imageDisplaySize.width) /
+                                2,
+                            (constraints.maxHeight - _imageDisplaySize.height) /
+                                2,
+                          );
 
-                      return GestureDetector(
-                        onPanStart: _onPanStart,
-                        onPanUpdate: _onPanUpdate,
-                        onPanEnd: _onPanEnd,
-                        child: Container(
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                          color: Colors.black,
-                          child: CustomPaint(
-                            painter: CropPainter(
-                              image: _image!,
-                              imageDisplaySize: _imageDisplaySize,
-                              imageOffset: _imageOffset,
-                              cropRect: _cropRect,
-                              isDrawing: _isDrawing,
+                          return GestureDetector(
+                            onPanStart: _onPanStart,
+                            onPanUpdate: _onPanUpdate,
+                            onPanEnd: _onPanEnd,
+                            child: Container(
+                              width: constraints.maxWidth,
+                              height: constraints.maxHeight,
+                              color: Colors.black,
+                              child: CustomPaint(
+                                painter: CropPainter(
+                                  image: _image!,
+                                  imageDisplaySize: _imageDisplaySize,
+                                  imageOffset: _imageOffset,
+                                  cropRect: _cropRect,
+                                  isDrawing: _isDrawing,
+                                ),
+                                size: Size(
+                                  constraints.maxWidth,
+                                  constraints.maxHeight,
+                                ),
+                              ),
                             ),
-                            size: Size(constraints.maxWidth, constraints.maxHeight),
+                          );
+                        },
+                      ),
+                      // Floating tip when no crop area is drawn - non-interactive
+                      if (_cropRect == null)
+                        Positioned(
+                          top: 20,
+                          left: 20,
+                          right: 20,
+                          child: IgnorePointer(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.touch_app,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'เริ่มต้นด้วยการลากนิ้วบนรูปภาพเพื่อวาดกรอบ',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      );
-                    },
+                    ],
                   ),
                 ),
               ],
             )
-          : const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
+          : const Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }
 }
@@ -304,7 +438,6 @@ class CropPainter extends CustomPainter {
 
     // Draw crop area with transparent background (only show border)
     if (cropRect != null) {
-
       // Draw crop border
       final borderPaint = Paint()
         ..color = AppConstants.primaryColor
@@ -387,6 +520,6 @@ class CropPainter extends CustomPainter {
   @override
   bool shouldRepaint(CropPainter oldDelegate) {
     return oldDelegate.cropRect != cropRect ||
-           oldDelegate.isDrawing != isDrawing;
+        oldDelegate.isDrawing != isDrawing;
   }
 }

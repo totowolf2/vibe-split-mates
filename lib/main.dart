@@ -197,30 +197,12 @@ class _ActionButtonsSection extends StatelessWidget {
       // Show crop instruction
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('📷 ครอบรูปใบเสร็จ'),
-            content: const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('เคล็ดลับสำหรับการครอบรูป:'),
-                SizedBox(height: 8),
-                Text('1. ปรับกรอบให้ครอบเฉพาะส่วนของใบเสร็จ'),
-                Text('2. หลีกเลี่ยงพื้นหลังหรือวัตถุอื่น'),
-                Text('3. ให้ข้อความในใบเสร็จชัดเจน'),
-                SizedBox(height: 8),
-                Text('✨ ยิ่งครอบแม่นยำ ยิ่งสแกนได้ดี!', 
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('เริ่มครอบรูป'),
-              ),
-            ],
+        // Show brief tip as snackbar instead of blocking dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('💡 วาดกรอบรอบส่วนของใบเสร็จ เพื่อสแกนได้แม่นยำ'),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
           ),
         );
         
