@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/item.dart';
 import '../models/person.dart';
 import '../utils/constants.dart';
+import 'person_avatar.dart';
 
 class ItemCard extends StatefulWidget {
   final Item item;
@@ -167,17 +168,6 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final ownerNames = widget.item.ownerIds
-        .map(
-          (id) => widget.people
-              .firstWhere(
-                (person) => person.id == id,
-                orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
-              )
-              .name,
-        )
-        .join(', ');
-
     return AnimatedBuilder(
       animation: _hintAnimation,
       builder: (context, child) {
@@ -210,19 +200,32 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.item.ownerIds.isEmpty 
-                        ? 'แตะเพื่อเลือกคนที่แชร์' 
-                        : 'แชร์กับ: $ownerNames',
-                      style: AppTextStyles.captionStyle.copyWith(
-                        color: widget.item.ownerIds.isEmpty 
-                          ? Colors.orange.shade600 
-                          : null,
-                        fontStyle: widget.item.ownerIds.isEmpty 
-                          ? FontStyle.italic 
-                          : null,
-                      ),
-                    ),
+                    widget.item.ownerIds.isEmpty 
+                      ? Text(
+                          'แตะเพื่อเลือกคนที่แชร์',
+                          style: AppTextStyles.captionStyle.copyWith(
+                            color: Colors.orange.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            Text(
+                              'แชร์กับ: ',
+                              style: AppTextStyles.captionStyle,
+                            ),
+                            ...widget.item.ownerIds.map((id) {
+                              final person = widget.people.firstWhere(
+                                (p) => p.id == id,
+                                orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
+                              );
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: PersonAvatar(person: person, size: 20, emojiAsIcon: true),
+                              );
+                            }),
+                          ],
+                        ),
                     if (widget.item.hasDiscount)
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
@@ -605,7 +608,7 @@ class _OwnerSelectionDialogState extends State<_OwnerSelectionDialog> {
                         onChanged: (_) => _toggleOwner(person.id),
                         title: Row(
                           children: [
-                            Text(person.avatar, style: const TextStyle(fontSize: 20)),
+                            PersonAvatar(person: person, size: 32),
                             const SizedBox(width: 8),
                             Text(person.name),
                           ],

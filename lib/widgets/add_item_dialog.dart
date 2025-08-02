@@ -6,6 +6,7 @@ import '../models/item.dart';
 import '../models/person.dart';
 import '../utils/emoji_utils.dart';
 import '../utils/constants.dart';
+import 'person_avatar.dart';
 
 class AddItemDialog extends StatefulWidget {
   final List<Person> availablePeople;
@@ -307,7 +308,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                                   person.id,
                                 );
                                 return FilterChip(
-                                  avatar: Text(person.avatar),
+                                  avatar: PersonAvatar(person: person, size: 28, showBorder: false),
                                   label: Text(person.name),
                                   selected: isSelected,
                                   onSelected: (_) => _toggleOwner(person.id),

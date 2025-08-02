@@ -5,6 +5,7 @@ import '../models/item.dart';
 import '../models/person.dart';
 import '../utils/constants.dart';
 import '../utils/emoji_utils.dart';
+import 'person_avatar.dart';
 
 class OCRResultsDialog extends StatefulWidget {
   final List<Item> detectedItems;
@@ -295,12 +296,23 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
                                   style: AppTextStyles.bodyStyle,
                                 ),
                                 subtitle: hasOwners
-                                    ? Text(
-                                        'แชร์กับ: ${item.ownerIds.map((id) => widget.availablePeople.firstWhere(
-                                          (p) => p.id == id,
-                                          orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
-                                        ).name).join(', ')}',
-                                        style: AppTextStyles.captionStyle,
+                                    ? Row(
+                                        children: [
+                                          Text(
+                                            'แชร์กับ: ',
+                                            style: AppTextStyles.captionStyle,
+                                          ),
+                                          ...item.ownerIds.map((id) {
+                                            final person = widget.availablePeople.firstWhere(
+                                              (p) => p.id == id,
+                                              orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
+                                            );
+                                            return Padding(
+                                              padding: const EdgeInsets.only(right: 4),
+                                              child: PersonAvatar(person: person, size: 24, emojiAsIcon: true),
+                                            );
+                                          }),
+                                        ],
                                       )
                                     : Text(
                                         'ยังไม่ได้เลือกคนแชร์',
@@ -563,7 +575,7 @@ class _EditItemDialogState extends State<_EditItemDialog> {
                   children: widget.availablePeople.map((person) {
                     final isSelected = _selectedOwnerIds.contains(person.id);
                     return FilterChip(
-                      avatar: Text(person.avatar),
+                      avatar: PersonAvatar(person: person, size: 28, showBorder: false),
                       label: Text(person.name),
                       selected: isSelected,
                       onSelected: (_) => _toggleOwner(person.id),

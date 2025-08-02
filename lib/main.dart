@@ -7,6 +7,7 @@ import 'utils/constants.dart';
 import 'widgets/add_person_dialog.dart';
 import 'widgets/add_item_dialog.dart';
 import 'widgets/item_card.dart';
+import 'widgets/person_avatar.dart';
 import 'widgets/global_discount_dialog.dart';
 import 'widgets/ocr_results_dialog.dart';
 import 'services/export_service.dart';
@@ -561,7 +562,7 @@ class _PeopleSection extends StatelessWidget {
                           runSpacing: AppConstants.smallPadding,
                           children: billProvider.people.map((person) {
                             return Chip(
-                              avatar: Text(person.avatar),
+                              avatar: PersonAvatar(person: person, size: 32, showBorder: false),
                               label: Text(person.name),
                               deleteIcon: const Icon(Icons.close, size: 16),
                               onDeleted: () {
@@ -602,7 +603,7 @@ class _PeopleSection extends StatelessWidget {
                               )
                               .map((person) {
                                 return ActionChip(
-                                  avatar: Text(person.avatar),
+                                  avatar: PersonAvatar(person: person, size: 32, showBorder: false),
                                   label: Text(person.name),
                                   onPressed: () {
                                     billProvider.addPersonToBill(person);
@@ -931,10 +932,7 @@ class _SummarySection extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                person.avatar,
-                                style: AppTextStyles.emojiStyle,
-                              ),
+                              PersonAvatar(person: person, size: 36, emojiAsIcon: true),
                               const SizedBox(width: AppConstants.smallPadding),
                               Expanded(
                                 child: Text(
