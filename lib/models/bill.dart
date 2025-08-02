@@ -192,6 +192,27 @@ class Bill {
     return discounts;
   }
 
+  // Get emojis of items that each person bought
+  Map<String, List<String>> getPersonItemEmojis() {
+    final personEmojis = <String, List<String>>{};
+
+    // Initialize all people with empty lists
+    for (final person in people) {
+      personEmojis[person.id] = <String>[];
+    }
+
+    // Collect emojis for each person
+    for (final item in items) {
+      for (final ownerId in item.ownerIds) {
+        if (personEmojis.containsKey(ownerId)) {
+          personEmojis[ownerId]!.add(item.emoji);
+        }
+      }
+    }
+
+    return personEmojis;
+  }
+
   // JSON serialization
   Map<String, dynamic> toJson() {
     return {

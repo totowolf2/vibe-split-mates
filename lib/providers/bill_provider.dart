@@ -27,6 +27,8 @@ class BillProvider with ChangeNotifier {
       _currentBill?.calculatePersonShares() ?? {};
   Map<String, double> get personDiscounts =>
       _currentBill?.calculatePersonDiscounts() ?? {};
+  Map<String, List<String>> get personItemEmojis =>
+      _currentBill?.getPersonItemEmojis() ?? {};
 
   BillProvider() {
     _initializeProvider();

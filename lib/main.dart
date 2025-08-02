@@ -1072,6 +1072,7 @@ class _SummarySection extends StatelessWidget {
                   ...billProvider.people.map((person) {
                     final amountToPay = shares[person.id] ?? 0.0;
                     final discountReceived = discounts[person.id] ?? 0.0;
+                    final itemEmojis = billProvider.personItemEmojis[person.id] ?? [];
 
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -1092,11 +1093,24 @@ class _SummarySection extends StatelessWidget {
                               PersonAvatar(person: person, size: 36, emojiAsIcon: true),
                               const SizedBox(width: AppConstants.smallPadding),
                               Expanded(
-                                child: Text(
-                                  person.name,
-                                  style: AppTextStyles.bodyStyle.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      person.name,
+                                      style: AppTextStyles.bodyStyle.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (itemEmojis.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        itemEmojis.take(8).join(' '), // Show max 8 emojis
+                                        style: const TextStyle(fontSize: 12),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                               Text(
