@@ -270,111 +270,140 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
                             final hasOwners = item.ownerIds.isNotEmpty;
 
                             return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 2),
+                              margin: const EdgeInsets.symmetric(vertical: 4),
                               color: isSelected
                                   ? AppConstants.primaryColor.withValues(
                                       alpha: 0.1,
                                     )
                                   : null,
-                              child: ListTile(
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                              child: InkWell(
+                                onTap: () => _editItem(index),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Checkbox(
-                                      value: isSelected,
-                                      onChanged: (_) =>
-                                          _toggleItemSelection(index),
+                                    // Header row with checkbox, emoji, name and price
+                                    Row(
+                                      children: [
+                                        Checkbox(
+                                          value: isSelected,
+                                          onChanged: (_) => _toggleItemSelection(index),
+                                        ),
+                                        Text(
+                                          item.emoji,
+                                          style: AppTextStyles.emojiStyle,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            item.name,
+                                            style: AppTextStyles.bodyStyle,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${AppConstants.currencySymbol}${item.price.toStringAsFixed(2)}',
+                                          style: AppTextStyles.priceStyle.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            switch (value) {
+                                              case 'edit':
+                                                _editItem(index);
+                                                break;
+                                              case 'remove':
+                                                _removeItem(index);
+                                                break;
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 16),
+                                                  SizedBox(width: 8),
+                                                  Text('แก้ไข'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'remove',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 16,
+                                                    color: Colors.red,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'ลบ',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      item.emoji,
-                                      style: AppTextStyles.emojiStyle,
-                                    ),
-                                  ],
-                                ),
-                                title: Text(
-                                  item.name,
-                                  style: AppTextStyles.bodyStyle,
-                                ),
-                                subtitle: hasOwners
-                                    ? Row(
+                                    // Sharing info row
+                                    if (hasOwners) ...[
+                                      const SizedBox(height: 8),
+                                      Row(
                                         children: [
+                                          const SizedBox(width: 48), // Space for checkbox
                                           Text(
                                             'แชร์กับ: ',
                                             style: AppTextStyles.captionStyle,
                                           ),
-                                          ...item.ownerIds.map((id) {
-                                            final person = widget.availablePeople.firstWhere(
-                                              (p) => p.id == id,
-                                              orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
-                                            );
-                                            return Padding(
-                                              padding: const EdgeInsets.only(right: 4),
-                                              child: PersonAvatar(person: person, size: 24, emojiAsIcon: true),
-                                            );
-                                          }),
+                                          Expanded(
+                                            child: Wrap(
+                                              spacing: 4,
+                                              children: item.ownerIds.map((id) {
+                                                final person = widget.availablePeople.firstWhere(
+                                                  (p) => p.id == id,
+                                                  orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
+                                                );
+                                                return PersonAvatar(person: person, size: 24, emojiAsIcon: true);
+                                              }).toList(),
+                                            ),
+                                          ),
                                         ],
-                                      )
-                                    : Text(
-                                        'ยังไม่ได้เลือกคนแชร์',
-                                        style: AppTextStyles.captionStyle
-                                            .copyWith(
+                                      ),
+                                    ] else ...[
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const SizedBox(width: 48), // Space for checkbox
+                                          Icon(
+                                            Icons.warning_amber,
+                                            size: 16,
+                                            color: Colors.orange.shade600,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'ยังไม่ได้เลือกคนแชร์',
+                                            style: AppTextStyles.captionStyle.copyWith(
                                               color: Colors.orange.shade600,
                                             ),
+                                          ),
+                                        ],
                                       ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '${AppConstants.currencySymbol}${item.price.toStringAsFixed(2)}',
-                                      style: AppTextStyles.priceStyle,
-                                    ),
-                                    PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        switch (value) {
-                                          case 'edit':
-                                            _editItem(index);
-                                            break;
-                                          case 'remove':
-                                            _removeItem(index);
-                                            break;
-                                        }
-                                      },
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit, size: 16),
-                                              SizedBox(width: 8),
-                                              Text('แก้ไข'),
-                                            ],
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'remove',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.delete,
-                                                size: 16,
-                                                color: Colors.red,
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'ลบ',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
                                   ],
                                 ),
-                                onTap: () => _editItem(index),
                               ),
+                            ),
                             );
                           },
                         ),
