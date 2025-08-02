@@ -209,6 +209,18 @@ class OCRService {
       name = _cleanItemName(name);
       if (name.isEmpty) name = 'รายการสินค้า';
       
+      // Check if name contains readable English text, if not use generic name
+      if (!_isReadableEnglishText(name)) {
+        if (kDebugMode) {
+          print('Replacing unreadable name "$name" with รายการสินค้า');
+        }
+        name = 'รายการสินค้า';
+      } else {
+        if (kDebugMode) {
+          print('Keeping readable name: "$name"');
+        }
+      }
+      
       // Generate unique ID and emoji
       final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
       final emoji = EmojiUtils.generateEmoji(name);
@@ -226,6 +238,115 @@ class OCRService {
       }
       return null;
     }
+  }
+
+  /// Check if text contains readable English words
+  static bool _isReadableEnglishText(String text) {
+    if (text.isEmpty || text.length < 3) return false;
+    
+    // Clean text for analysis
+    final cleanText = text.toLowerCase().replaceAll(RegExp(r'[^a-z\s]'), ' ').trim();
+    if (cleanText.length < 3) return false;
+    
+    if (kDebugMode) {
+      print('Checking readability for: "$text" -> cleaned: "$cleanText"');
+    }
+    
+    // Check if it contains mostly English letters
+    final englishChars = RegExp(r'[a-z]').allMatches(cleanText).length;
+    final totalChars = cleanText.replaceAll(' ', '').length;
+    
+    if (totalChars == 0) return false;
+    final englishRatio = englishChars / totalChars;
+    
+    if (kDebugMode) {
+      print('English ratio: $englishRatio ($englishChars/$totalChars)');
+    }
+    
+    // Must be at least 50% English characters (lowered from 70%)
+    if (englishRatio < 0.5) return false;
+    
+    // Check for common English patterns or recognizable words
+    final words = cleanText.split(RegExp(r'\s+'));
+    int recognizableWords = 0;
+    
+    for (final word in words) {
+      if (word.length < 2) continue;
+      
+      // Check for common English word patterns
+      if (_isLikelyEnglishWord(word)) {
+        recognizableWords++;
+        if (kDebugMode) {
+          print('Found recognizable word: "$word"');
+        }
+      }
+    }
+    
+    if (kDebugMode) {
+      print('Recognizable words: $recognizableWords');
+    }
+    
+    // For garbled text, be more strict - require at least one recognizable word
+    return recognizableWords > 0;
+  }
+
+  /// Check if word looks like English
+  static bool _isLikelyEnglishWord(String word) {
+    if (word.length < 2) return false;
+    
+    // Only accept actual common English words, not garbled text
+    final commonEnglishWords = {
+      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 
+      'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 
+      'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 
+      'boy', 'did', 'man', 'men', 'run', 'she', 'too', 'use', 'very', 'what', 
+      'with', 'have', 'from', 'they', 'know', 'want', 'been', 'good', 'much', 
+      'some', 'time', 'will', 'year', 'your', 'come', 'could', 'each', 'first', 
+      'than', 'them', 'well', 'when', 'where', 'which', 'would', 'there', 'their', 
+      'said', 'about', 'after', 'again', 'before', 'being', 'every', 'great', 
+      'might', 'never', 'other', 'right', 'shall', 'still', 'these', 'those', 
+      'under', 'water', 'while', 'world', 'food', 'drink', 'cake', 'bread', 
+      'milk', 'water', 'coffee', 'tea', 'juice', 'beer', 'wine', 'soup', 
+      'rice', 'meat', 'fish', 'chicken', 'beef', 'pork', 'egg', 'cheese', 
+      'apple', 'banana', 'orange', 'pizza', 'burger', 'salad', 'sandwich'
+    };
+    
+    // Check if it's a common English word
+    if (commonEnglishWords.contains(word.toLowerCase())) {
+      return true;
+    }
+    
+    // Check for common English endings
+    final englishSuffixes = ['ing', 'ed', 'er', 'est', 'ly', 'tion', 'ness', 'ment', 'able', 'ible'];
+    for (final suffix in englishSuffixes) {
+      if (word.endsWith(suffix) && word.length > suffix.length + 2) {
+        return true;
+      }
+    }
+    
+    // Check for common English prefixes
+    final englishPrefixes = ['un', 're', 'pre', 'dis', 'over', 'under'];
+    for (final prefix in englishPrefixes) {
+      if (word.startsWith(prefix) && word.length > prefix.length + 2) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /// Check if text has English-like structure
+  static bool _hasEnglishStructure(String text) {
+    // Check for reasonable vowel-consonant distribution
+    final vowels = RegExp(r'[aeiou]').allMatches(text).length;
+    final consonants = RegExp(r'[bcdfghjklmnpqrstvwxyz]').allMatches(text).length;
+    final total = vowels + consonants;
+    
+    if (total == 0) return false;
+    
+    final vowelRatio = vowels / total;
+    // English typically has 35-45% vowels
+    return vowelRatio >= 0.2 && vowelRatio <= 0.6;
   }
 
   /// Parse a single line as an item
