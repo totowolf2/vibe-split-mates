@@ -253,7 +253,7 @@ class _ActionButtonsSection extends StatelessWidget {
       final detectedItems = OCRService.parseItemsFromText(extractedText);
 
       // Validate results
-      final validationResult = OCRService.validateOCRResults(detectedItems);
+      final validationResult = OCRService.validateOCRResults(detectedItems, rawText: extractedText);
 
       // Close loading dialog
       if (context.mounted) {
