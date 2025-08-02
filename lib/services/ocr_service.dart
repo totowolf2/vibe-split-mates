@@ -13,15 +13,12 @@ class OCRService {
       final inputImage = InputImage.fromFilePath(imagePath);
       final recognizedText = await _textRecognizer.processImage(inputImage);
 
-      // Post-process the OCR result to improve Thai text recognition
-      String processedText = _enhanceThaiTextRecognition(recognizedText.text);
-
       if (kDebugMode) {
         print('OCR Raw Text:\n${recognizedText.text}');
-        print('OCR Enhanced Text:\n$processedText');
       }
 
-      return processedText;
+      // Return raw text for better parsing, enhancement will be done during parsing if needed
+      return recognizedText.text;
     } catch (e) {
       if (kDebugMode) {
         print('OCR Error: $e');
@@ -92,8 +89,8 @@ class OCRService {
       if (priceMatches.isNotEmpty) {
         for (final match in priceMatches) {
           final price = match.group(1)!;
-          // Add a generic Thai food item name with the price
-          cleanLines.add('รายการอาหาร $price');
+          // Add a generic Thai item name with the price
+          cleanLines.add('รายการสินค้า $price');
         }
       }
     }
@@ -101,24 +98,26 @@ class OCRService {
     return cleanLines.join('\n');
   }
 
-  /// Parse items from OCR text
+  /// Parse items from OCR text with improved Thai receipt format handling
   static List<Item> parseItemsFromText(String text) {
     final items = <Item>[];
-    final lines = text
+    
+    // Use raw text first to get better parsing results
+    final rawLines = text
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
         .toList();
 
     if (kDebugMode) {
-      print('Processing ${lines.length} lines from OCR');
+      print('Processing ${rawLines.length} lines from OCR');
     }
 
-    // First try normal line-by-line parsing
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      final item = _parseLineAsItem(line);
-
+    // Try parsing raw text first (before enhancement)
+    final reconstructedItems = _reconstructReceiptItems(rawLines);
+    
+    for (final itemData in reconstructedItems) {
+      final item = _parseReconstructedItem(itemData);
       if (item != null) {
         items.add(item);
         if (kDebugMode) {
@@ -127,9 +126,9 @@ class OCRService {
       }
     }
 
-    // If no items found, try matching prices in subsequent lines
+    // Fallback to old method if new method fails
     if (items.isEmpty) {
-      items.addAll(_parseItemsWithSeparateLines(lines));
+      items.addAll(_parseItemsWithSeparateLines(rawLines));
     }
 
     if (kDebugMode) {
@@ -137,6 +136,96 @@ class OCRService {
     }
 
     return items;
+  }
+
+  /// Reconstruct receipt items from scattered OCR lines
+  static List<Map<String, dynamic>> _reconstructReceiptItems(List<String> lines) {
+    final items = <Map<String, dynamic>>[];
+    
+    // Separate quantities, names, and prices
+    final quantities = <int>[];
+    final possibleNames = <String>[];
+    final prices = <double>[];
+    
+    for (final line in lines) {
+      // Check if line is a standalone quantity (1, 2, 3, etc.)
+      if (RegExp(r'^\d+$').hasMatch(line)) {
+        final qty = int.tryParse(line);
+        if (qty != null && qty > 0 && qty <= 99) {
+          quantities.add(qty);
+          continue;
+        }
+      }
+      
+      // Check if line is a price (ends with .00 or similar)
+      final priceMatch = RegExp(r'^(\d+(?:\.\d{2})?)$').firstMatch(line);
+      if (priceMatch != null) {
+        final price = double.tryParse(priceMatch.group(1)!);
+        if (price != null && price > 1 && price <= 9999) { // Changed from > 0 to > 1 to avoid confusion with quantities
+          prices.add(price);
+          continue;
+        }
+      }
+      
+      // Otherwise, consider it a potential product name
+      if (line.length > 1 && !_isNonItemLine(line)) {
+        possibleNames.add(line);
+      }
+    }
+    
+    if (kDebugMode) {
+      print('Found quantities: $quantities');
+      print('Found names: $possibleNames');
+      print('Found prices: $prices');
+    }
+    
+    // Match quantities, names, and prices
+    final maxItems = [quantities.length, possibleNames.length, prices.length].reduce((a, b) => a > b ? a : b);
+    
+    for (int i = 0; i < maxItems; i++) {
+      final quantity = i < quantities.length ? quantities[i] : 1;
+      final name = i < possibleNames.length ? possibleNames[i] : 'รายการสินค้า';
+      final price = i < prices.length ? prices[i] : 0.0;
+      
+      if (price > 0) {
+        items.add({
+          'quantity': quantity,
+          'name': name,
+          'price': price,
+        });
+      }
+    }
+    
+    return items;
+  }
+
+  /// Parse a reconstructed item data
+  static Item? _parseReconstructedItem(Map<String, dynamic> itemData) {
+    try {
+      String name = itemData['name'] as String;
+      final price = itemData['price'] as double;
+      
+      // Clean the name
+      name = _cleanItemName(name);
+      if (name.isEmpty) name = 'รายการสินค้า';
+      
+      // Generate unique ID and emoji
+      final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
+      final emoji = EmojiUtils.generateEmoji(name);
+      
+      return Item(
+        id: id,
+        name: name,
+        price: price,
+        emoji: emoji,
+        ownerIds: [],
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error parsing reconstructed item: $e');
+      }
+      return null;
+    }
   }
 
   /// Parse a single line as an item
