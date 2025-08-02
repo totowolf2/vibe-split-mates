@@ -10,8 +10,13 @@ import 'person_avatar.dart';
 
 class AddItemDialog extends StatefulWidget {
   final List<Person> availablePeople;
+  final Item? existingItem; // For editing existing items
 
-  const AddItemDialog({super.key, required this.availablePeople});
+  const AddItemDialog({
+    super.key, 
+    required this.availablePeople,
+    this.existingItem,
+  });
 
   @override
   State<AddItemDialog> createState() => _AddItemDialogState();
@@ -25,11 +30,22 @@ class _AddItemDialogState extends State<AddItemDialog> {
   String _selectedEmoji = '🍽️';
   List<String> _selectedOwnerIds = [];
   bool _showEmojiPicker = false;
+  bool _userSelectedEmoji = false; // Track if user manually selected emoji
 
   @override
   void initState() {
     super.initState();
     _nameController.addListener(_onNameChanged);
+    
+    // If editing existing item, populate the fields
+    if (widget.existingItem != null) {
+      final item = widget.existingItem!;
+      _nameController.text = item.name;
+      _priceController.text = item.price.toString();
+      _selectedEmoji = item.emoji;
+      _selectedOwnerIds = List.from(item.ownerIds);
+      _userSelectedEmoji = true; // Assume existing emoji was user-selected
+    }
   }
 
   @override
@@ -41,7 +57,22 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   void _onNameChanged() {
     final name = _nameController.text.trim();
-    if (name.isNotEmpty) {
+    
+    // For editing items: if name changes significantly, reset to auto-generate
+    if (widget.existingItem != null && 
+        name.isNotEmpty && 
+        name != widget.existingItem!.name) {
+      // Name changed during editing - reset to auto-generate
+      final autoEmoji = EmojiUtils.generateEmoji(name);
+      setState(() {
+        _selectedEmoji = autoEmoji;
+        _userSelectedEmoji = false; // Reset user selection flag
+      });
+      return;
+    }
+    
+    // For new items: auto-generate if user hasn't manually selected
+    if (name.isNotEmpty && !_userSelectedEmoji) {
       final autoEmoji = EmojiUtils.generateEmoji(name);
       if (autoEmoji != _selectedEmoji && !_showEmojiPicker) {
         setState(() {
@@ -55,6 +86,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
     setState(() {
       _selectedEmoji = emoji;
       _showEmojiPicker = false;
+      _userSelectedEmoji = true; // Mark that user manually selected emoji
     });
   }
 
@@ -119,7 +151,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     const Text('➕', style: AppTextStyles.emojiStyle),
                     const SizedBox(width: AppConstants.smallPadding),
                     Text(
-                      'เพิ่มรายการใหม่',
+                      widget.existingItem != null ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่',
                       style: AppTextStyles.subHeaderStyle,
                     ),
                     const Spacer(),
@@ -440,7 +472,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: _submitForm, // ตอนนี้เพิ่มได้เสมอ ไม่ต้องมีคนก่อน
-                        child: const Text('เพิ่ม'),
+                        child: Text(widget.existingItem != null ? 'บันทึก' : 'เพิ่ม'),
                       ),
                     ),
                   ],

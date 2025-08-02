@@ -116,8 +116,9 @@ class OCRService {
     // Try parsing raw text first (before enhancement)
     final reconstructedItems = _reconstructReceiptItems(rawLines);
     
-    for (final itemData in reconstructedItems) {
-      final item = _parseReconstructedItem(itemData);
+    for (int i = 0; i < reconstructedItems.length; i++) {
+      final itemData = reconstructedItems[i];
+      final item = _parseReconstructedItem(itemData, i);
       if (item != null) {
         items.add(item);
         if (kDebugMode) {
@@ -200,7 +201,7 @@ class OCRService {
   }
 
   /// Parse a reconstructed item data
-  static Item? _parseReconstructedItem(Map<String, dynamic> itemData) {
+  static Item? _parseReconstructedItem(Map<String, dynamic> itemData, [int? index]) {
     try {
       String name = itemData['name'] as String;
       final price = itemData['price'] as double;
@@ -223,7 +224,7 @@ class OCRService {
       
       // Generate unique ID and emoji
       final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-      final emoji = EmojiUtils.generateEmoji(name);
+      final emoji = EmojiUtils.generateEmoji(name, additionalSeed: index);
       
       return Item(
         id: id,
@@ -406,7 +407,7 @@ class OCRService {
           // Generate unique ID and emoji
           final id =
               '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-          final emoji = EmojiUtils.generateEmoji(name);
+          final emoji = EmojiUtils.generateEmoji(name, additionalSeed: DateTime.now().microsecond);
 
           return Item(
             id: id,
@@ -448,7 +449,7 @@ class OCRService {
           
           if (cleanName.isNotEmpty && cleanName.length >= 2 && price > 0 && price <= 99999) {
             final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-            final emoji = EmojiUtils.generateEmoji(cleanName);
+            final emoji = EmojiUtils.generateEmoji(cleanName, additionalSeed: i);
             
             items.add(Item(
               id: id,
