@@ -178,51 +178,52 @@ class EmojiUtils {
   ];
 
   /// Generate emoji based on item name
-  static String generateEmoji(String itemName, {int? additionalSeed}) {
+  static String generateEmoji(String itemName, {int? additionalSeed, bool forceRandom = false}) {
     final lowerName = itemName.toLowerCase().trim();
 
-    // Check for exact matches first
-    if (_keywordToEmoji.containsKey(lowerName)) {
+    // Check for exact matches first (unless forced random)
+    if (!forceRandom && _keywordToEmoji.containsKey(lowerName)) {
       final emoji = _keywordToEmoji[lowerName]!;
       // If emoji is empty string, use random emoji instead
       if (emoji.isEmpty) {
-        final hash = itemName.hashCode.abs();
-        final nameLength = itemName.length;
-        final firstChar = itemName.isNotEmpty ? itemName.codeUnitAt(0) : 0;
-        final seed = additionalSeed ?? DateTime.now().millisecondsSinceEpoch;
-        final combinedHash = (hash * 31 + nameLength * 17 + firstChar * 13 + seed * 7) % _randomFunEmojis.length;
-        return _randomFunEmojis[combinedHash];
+        return _getRandomEmoji(itemName, additionalSeed);
       }
       return emoji;
     }
 
-    // Check for partial matches
-    for (final entry in _keywordToEmoji.entries) {
-      if (lowerName.contains(entry.key)) {
-        final emoji = entry.value;
-        // If emoji is empty string, use random emoji instead
-        if (emoji.isEmpty) {
-          final hash = itemName.hashCode.abs();
-          final nameLength = itemName.length;
-          final firstChar = itemName.isNotEmpty ? itemName.codeUnitAt(0) : 0;
-          final seed = additionalSeed ?? DateTime.now().millisecondsSinceEpoch;
-          final combinedHash = (hash * 31 + nameLength * 17 + firstChar * 13 + seed * 7) % _randomFunEmojis.length;
-          return _randomFunEmojis[combinedHash];
+    // Check for partial matches (unless forced random)
+    if (!forceRandom) {
+      for (final entry in _keywordToEmoji.entries) {
+        if (lowerName.contains(entry.key)) {
+          final emoji = entry.value;
+          // If emoji is empty string, use random emoji instead
+          if (emoji.isEmpty) {
+            return _getRandomEmoji(itemName, additionalSeed);
+          }
+          return emoji;
         }
-        return emoji;
       }
     }
 
-    // If no match found, return a fun random emoji based on item name hash
-    // Use multiple factors to increase diversity including time for OCR duplicates
+    // If no match found or forced random, return a random emoji
+    return _getRandomEmoji(itemName, additionalSeed);
+  }
+
+  /// Get a truly random emoji with multiple entropy sources
+  static String _getRandomEmoji(String itemName, int? additionalSeed) {
+    final now = DateTime.now();
     final hash = itemName.hashCode.abs();
     final nameLength = itemName.length;
     final firstChar = itemName.isNotEmpty ? itemName.codeUnitAt(0) : 0;
-    final seed = additionalSeed ?? DateTime.now().millisecondsSinceEpoch;
     
-    // Combine multiple factors for better distribution
-    final combinedHash = (hash * 31 + nameLength * 17 + firstChar * 13 + seed * 7) % _randomFunEmojis.length;
-    return _randomFunEmojis[combinedHash];
+    // Use multiple entropy sources for true randomness
+    final seed = additionalSeed ?? 0;
+    final timeEntropy = now.millisecondsSinceEpoch + now.microsecond;
+    final randomSeed = (hash * 31 + nameLength * 17 + firstChar * 13 + seed * 7 + timeEntropy * 3) % 1000000;
+    
+    // Use a simple linear congruential generator for better distribution
+    final random = (randomSeed * 1103515245 + 12345) % _randomFunEmojis.length;
+    return _randomFunEmojis[random];
   }
 
   /// Get all available emojis for manual selection

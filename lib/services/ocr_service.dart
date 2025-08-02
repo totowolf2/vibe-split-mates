@@ -224,7 +224,9 @@ class OCRService {
       
       // Generate unique ID and emoji
       final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-      final emoji = EmojiUtils.generateEmoji(name, additionalSeed: index);
+      // Force random emoji for generic names like "รายการสินค้า"
+      final isGenericName = name == 'รายการสินค้า' || name == 'สินค้า' || name == 'รายการ' || name == 'item';
+      final emoji = EmojiUtils.generateEmoji(name, additionalSeed: index, forceRandom: isGenericName);
       
       return Item(
         id: id,
@@ -407,7 +409,9 @@ class OCRService {
           // Generate unique ID and emoji
           final id =
               '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-          final emoji = EmojiUtils.generateEmoji(name, additionalSeed: DateTime.now().microsecond);
+          // Force random emoji for generic names  
+          final isGenericName = name == 'รายการสินค้า' || name == 'สินค้า' || name == 'รายการ' || name == 'item';
+          final emoji = EmojiUtils.generateEmoji(name, additionalSeed: DateTime.now().microsecond, forceRandom: isGenericName);
 
           return Item(
             id: id,
@@ -449,7 +453,9 @@ class OCRService {
           
           if (cleanName.isNotEmpty && cleanName.length >= 2 && price > 0 && price <= 99999) {
             final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-            final emoji = EmojiUtils.generateEmoji(cleanName, additionalSeed: i);
+            // Force random emoji for generic names
+            final isGenericName = cleanName == 'รายการสินค้า' || cleanName == 'สินค้า' || cleanName == 'รายการ' || cleanName == 'item';
+            final emoji = EmojiUtils.generateEmoji(cleanName, additionalSeed: i, forceRandom: isGenericName);
             
             items.add(Item(
               id: id,
