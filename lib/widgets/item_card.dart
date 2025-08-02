@@ -4,6 +4,7 @@ import '../models/item.dart';
 import '../models/person.dart';
 import '../utils/constants.dart';
 import 'person_avatar.dart';
+import 'default_item_icon.dart';
 
 class ItemCard extends StatefulWidget {
   final Item item;
@@ -192,10 +193,12 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               child: ListTile(
                 onTap: _showOwnerSelectionDialog, // เพิ่ม onTap เพื่อเลือกคนที่แชร์
-                leading: Text(
-                  widget.item.emoji,
-                  style: AppTextStyles.emojiStyle,
-                ),
+                leading: widget.item.emoji == '🍽️' 
+                  ? const DefaultItemIcon(size: 24)
+                  : Text(
+                      widget.item.emoji,
+                      style: AppTextStyles.emojiStyle,
+                    ),
                 title: Text(widget.item.name, style: AppTextStyles.bodyStyle),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

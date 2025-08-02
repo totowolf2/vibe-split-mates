@@ -7,6 +7,7 @@ import '../models/person.dart';
 import '../utils/emoji_utils.dart';
 import '../utils/constants.dart';
 import 'person_avatar.dart';
+import 'default_item_icon.dart';
 
 class AddItemDialog extends StatefulWidget {
   final List<Person> availablePeople;
@@ -191,10 +192,12 @@ class _AddItemDialogState extends State<AddItemDialog> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    _selectedEmoji,
-                                    style: const TextStyle(fontSize: 24),
-                                  ),
+                                  _selectedEmoji == '🍽️' 
+                                    ? const DefaultItemIcon(size: 24) 
+                                    : Text(
+                                        _selectedEmoji,
+                                        style: const TextStyle(fontSize: 24),
+                                      ),
                                   Text(
                                     'แตะ',
                                     style: AppTextStyles.captionStyle.copyWith(
