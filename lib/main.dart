@@ -164,16 +164,6 @@ class _ActionButtonsSection extends StatelessWidget {
   void _scanReceipt(BuildContext context) async {
     final billProvider = context.read<BillProvider>();
 
-    if (billProvider.people.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณาเพิ่มคนก่อนเพื่อสแกนใบเสร็จ'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     try {
       // Show image source selection
       final imageSource = await ImageService.showImageSourceDialog(context);
@@ -307,16 +297,6 @@ class _ActionButtonsSection extends StatelessWidget {
 
   void _showAddItemDialog(BuildContext context) async {
     final billProvider = context.read<BillProvider>();
-
-    if (billProvider.people.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณาเพิ่มคนก่อนเพื่อแชร์ค่าใช้จ่าย'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
 
     final item = await showDialog<Item>(
       context: context,
@@ -506,6 +486,20 @@ class _ItemsSection extends StatelessWidget {
                                   ),
                                 );
                               }
+                            },
+                            onOwnersChanged: (ownerIds) {
+                              final updatedItem = item.copyWith(ownerIds: ownerIds);
+                              billProvider.updateItem(item.id, updatedItem);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    ownerIds.isEmpty 
+                                      ? 'ลบคนที่แชร์ ${item.name} เรียบร้อย'
+                                      : 'อัปเดตคนที่แชร์ ${item.name} เรียบร้อย',
+                                  ),
+                                  backgroundColor: Colors.blue.shade600,
+                                ),
+                              );
                             },
                           );
                         },

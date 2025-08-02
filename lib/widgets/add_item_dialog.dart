@@ -87,22 +87,12 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      if (_selectedOwnerIds.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('กรุณาเลือกคนที่จะแชร์ค่าใช้จ่าย'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
       final item = Item(
         id: '${DateTime.now().millisecondsSinceEpoch}',
         name: _nameController.text.trim(),
         price: double.parse(_priceController.text),
         emoji: _selectedEmoji,
-        ownerIds: List<String>.from(_selectedOwnerIds),
+        ownerIds: List<String>.from(_selectedOwnerIds), // ตอนนี้ยอมให้เป็น empty list ได้
       );
 
       Navigator.of(context).pop(item);
@@ -251,7 +241,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
                       // Owner selection
                       Text(
-                        'ใครจะแชร์ค่าใช้จ่าย?',
+                        'ใครจะแชร์ค่าใช้จ่าย? (เลือกได้ทีหลัง)',
                         style: AppTextStyles.captionStyle.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -448,9 +438,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     const SizedBox(width: AppConstants.defaultPadding),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: widget.availablePeople.isEmpty
-                            ? null
-                            : _submitForm,
+                        onPressed: _submitForm, // ตอนนี้เพิ่มได้เสมอ ไม่ต้องมีคนก่อน
                         child: const Text('เพิ่ม'),
                       ),
                     ),

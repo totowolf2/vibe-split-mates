@@ -10,6 +10,7 @@ class ItemCard extends StatefulWidget {
   final bool showHintAnimation;
   final VoidCallback? onDelete;
   final Function(double discount)? onDiscount;
+  final Function(List<String> ownerIds)? onOwnersChanged; // เพิ่ม callback สำหรับเปลี่ยนคนที่แชร์
 
   const ItemCard({
     super.key,
@@ -18,6 +19,7 @@ class ItemCard extends StatefulWidget {
     this.showHintAnimation = false,
     this.onDelete,
     this.onDiscount,
+    this.onOwnersChanged,
   });
 
   @override
@@ -104,6 +106,21 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
     }
   }
 
+  void _showOwnerSelectionDialog() async {
+    final selectedOwnerIds = await showDialog<List<String>>(
+      context: context,
+      builder: (context) => _OwnerSelectionDialog(
+        itemName: widget.item.name,
+        availablePeople: widget.people,
+        currentOwnerIds: widget.item.ownerIds,
+      ),
+    );
+
+    if (selectedOwnerIds != null && widget.onOwnersChanged != null) {
+      widget.onOwnersChanged!(selectedOwnerIds);
+    }
+  }
+
   Widget _buildBackground(DismissDirection direction) {
     final bool isDelete = direction == DismissDirection.endToStart;
 
@@ -184,6 +201,7 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
             child: Card(
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               child: ListTile(
+                onTap: _showOwnerSelectionDialog, // เพิ่ม onTap เพื่อเลือกคนที่แชร์
                 leading: Text(
                   widget.item.emoji,
                   style: AppTextStyles.emojiStyle,
@@ -193,8 +211,17 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'แชร์กับ: $ownerNames',
-                      style: AppTextStyles.captionStyle,
+                      widget.item.ownerIds.isEmpty 
+                        ? 'แตะเพื่อเลือกคนที่แชร์' 
+                        : 'แชร์กับ: $ownerNames',
+                      style: AppTextStyles.captionStyle.copyWith(
+                        color: widget.item.ownerIds.isEmpty 
+                          ? Colors.orange.shade600 
+                          : null,
+                        fontStyle: widget.item.ownerIds.isEmpty 
+                          ? FontStyle.italic 
+                          : null,
+                      ),
                     ),
                     if (widget.item.hasDiscount)
                       Padding(
@@ -465,6 +492,144 @@ class _DiscountDialogState extends State<_DiscountDialog> {
         ElevatedButton(
           onPressed: _submitDiscount,
           child: const Text('ใส่ส่วนลด'),
+        ),
+      ],
+    );
+  }
+}
+
+class _OwnerSelectionDialog extends StatefulWidget {
+  final String itemName;
+  final List<Person> availablePeople;
+  final List<String> currentOwnerIds;
+
+  const _OwnerSelectionDialog({
+    required this.itemName,
+    required this.availablePeople,
+    required this.currentOwnerIds,
+  });
+
+  @override
+  State<_OwnerSelectionDialog> createState() => _OwnerSelectionDialogState();
+}
+
+class _OwnerSelectionDialogState extends State<_OwnerSelectionDialog> {
+  late List<String> _selectedOwnerIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedOwnerIds = List<String>.from(widget.currentOwnerIds);
+  }
+
+  void _toggleOwner(String personId) {
+    setState(() {
+      if (_selectedOwnerIds.contains(personId)) {
+        _selectedOwnerIds.remove(personId);
+      } else {
+        _selectedOwnerIds.add(personId);
+      }
+    });
+  }
+
+  void _selectAllOwners() {
+    setState(() {
+      _selectedOwnerIds = widget.availablePeople.map((p) => p.id).toList();
+    });
+  }
+
+  void _clearAllOwners() {
+    setState(() {
+      _selectedOwnerIds.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('เลือกคนที่แชร์ "${widget.itemName}"'),
+      content: SizedBox(
+        width: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.availablePeople.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.orange.shade300),
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                  color: Colors.orange.shade50,
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange.shade700),
+                    const SizedBox(width: AppConstants.smallPadding),
+                    Expanded(
+                      child: Text(
+                        'ยังไม่มีคนในบิล กรุณาเพิ่มคนก่อน',
+                        style: AppTextStyles.captionStyle.copyWith(
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              // Quick selection buttons
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: _selectAllOwners,
+                    icon: const Icon(Icons.group, size: 16),
+                    label: const Text('ทุกคน'),
+                  ),
+                  TextButton.icon(
+                    onPressed: _clearAllOwners,
+                    icon: const Icon(Icons.clear, size: 16),
+                    label: const Text('ล้าง'),
+                  ),
+                ],
+              ),
+              
+              // People selection
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: widget.availablePeople.map((person) {
+                      final isSelected = _selectedOwnerIds.contains(person.id);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        onChanged: (_) => _toggleOwner(person.id),
+                        title: Row(
+                          children: [
+                            Text(person.avatar, style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 8),
+                            Text(person.name),
+                          ],
+                        ),
+                        dense: true,
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('ยกเลิก'),
+        ),
+        ElevatedButton(
+          onPressed: widget.availablePeople.isEmpty
+              ? null
+              : () => Navigator.of(context).pop(_selectedOwnerIds),
+          child: const Text('บันทึก'),
         ),
       ],
     );

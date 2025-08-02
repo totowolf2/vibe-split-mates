@@ -89,13 +89,12 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
     final selectedItems = _selectedItems
         .where((index) => index < _editableItems.length)
         .map((index) => _editableItems[index])
-        .where((item) => item.ownerIds.isNotEmpty)
-        .toList();
+        .toList(); // เอาการตรวจสอบ ownerIds.isNotEmpty ออก
 
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('กรุณาเลือกรายการและใส่คนที่จะแชร์ค่าใช้จ่าย'),
+          content: Text('กรุณาเลือกรายการ'),
           backgroundColor: Colors.orange,
         ),
       );
