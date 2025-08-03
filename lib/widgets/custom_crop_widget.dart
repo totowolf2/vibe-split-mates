@@ -19,6 +19,16 @@ class CustomCropWidget extends StatefulWidget {
   State<CustomCropWidget> createState() => _CustomCropWidgetState();
 }
 
+enum DragMode {
+  none,
+  move,
+  resizeLeft,
+  resizeRight,
+  resizeTop,
+  resizeBottom,
+  resizeCorner,
+}
+
 class _CustomCropWidgetState extends State<CustomCropWidget> {
   ui.Image? _image;
   bool _isImageLoaded = false;
@@ -28,6 +38,8 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
   bool _isDrawing = false;
   Size _imageDisplaySize = Size.zero;
   Offset _imageOffset = Offset.zero;
+  DragMode _dragMode = DragMode.none;
+  final double edgeSensitivity = 10.0;
 
   @override
   void initState() {
@@ -46,29 +58,98 @@ class _CustomCropWidgetState extends State<CustomCropWidget> {
   }
 
   void _onPanStart(DragStartDetails details) {
-    final clampedStart = _clampToImageBounds(details.localPosition);
-    setState(() {
-      _startPoint = clampedStart;
+    final touchPosition = details.localPosition;
+    if (_cropRect != null) {
+      if ((touchPosition.dx - _cropRect!.left).abs() < edgeSensitivity) {
+        _dragMode = DragMode.resizeLeft;
+      } else if ((touchPosition.dx - _cropRect!.right).abs() <
+          edgeSensitivity) {
+        _dragMode = DragMode.resizeRight;
+      } else if ((touchPosition.dy - _cropRect!.top).abs() < edgeSensitivity) {
+        _dragMode = DragMode.resizeTop;
+      } else if ((touchPosition.dy - _cropRect!.bottom).abs() <
+          edgeSensitivity) {
+        _dragMode = DragMode.resizeBottom;
+      } else if (_cropRect!.contains(touchPosition)) {
+        _dragMode = DragMode.move;
+      } else {
+        _dragMode = DragMode.none;
+      }
+    } else {
+      // เริ่มวาดใหม่
+      _startPoint = _clampToImageBounds(details.localPosition);
       _isDrawing = true;
-      _cropRect = Rect
-          .zero; // This will hide the tip immediately when user starts drawing
-    });
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    if (_startPoint != null) {
-      final clampedEnd = _clampToImageBounds(details.localPosition);
-      setState(() {
-        _endPoint = clampedEnd;
-        _cropRect = Rect.fromPoints(_startPoint!, _endPoint!);
-      });
+      _cropRect = Rect.zero;
+      _dragMode = DragMode.none;
     }
   }
 
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (_cropRect == null) return;
+    final delta = details.delta;
+
+    switch (_dragMode) {
+      case DragMode.move:
+        _cropRect = _cropRect!.shift(delta);
+        break;
+      case DragMode.resizeLeft:
+        _cropRect = Rect.fromLTRB(
+          (_cropRect!.left + delta.dx).clamp(
+            _imageOffset.dx,
+            _cropRect!.right - edgeSensitivity,
+          ),
+          _cropRect!.top,
+          _cropRect!.right,
+          _cropRect!.bottom,
+        );
+        break;
+      case DragMode.resizeRight:
+        _cropRect = Rect.fromLTRB(
+          _cropRect!.left,
+          _cropRect!.top,
+          (_cropRect!.right + delta.dx).clamp(
+            _cropRect!.left + edgeSensitivity,
+            _imageOffset.dx + _imageDisplaySize.width,
+          ),
+          _cropRect!.bottom,
+        );
+        break;
+      case DragMode.resizeTop:
+        _cropRect = Rect.fromLTRB(
+          _cropRect!.left,
+          (_cropRect!.top + delta.dy).clamp(
+            _imageOffset.dy,
+            _cropRect!.bottom - edgeSensitivity,
+          ),
+          _cropRect!.right,
+          _cropRect!.bottom,
+        );
+        break;
+      case DragMode.resizeBottom:
+        _cropRect = Rect.fromLTRB(
+          _cropRect!.left,
+          _cropRect!.top,
+          _cropRect!.right,
+          (_cropRect!.bottom + delta.dy).clamp(
+            _cropRect!.top + edgeSensitivity,
+            _imageOffset.dy + _imageDisplaySize.height,
+          ),
+        );
+        break;
+      default:
+        if (_isDrawing && _startPoint != null) {
+          final clampedEnd = _clampToImageBounds(details.localPosition);
+          _cropRect = Rect.fromPoints(_startPoint!, clampedEnd);
+        }
+        break;
+    }
+
+    setState(() {});
+  }
+
   void _onPanEnd(DragEndDetails details) {
-    setState(() {
-      _isDrawing = false;
-    });
+    _isDrawing = false;
+    _dragMode = DragMode.none;
   }
 
   void _resetCrop() {
