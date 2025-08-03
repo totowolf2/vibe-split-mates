@@ -9,7 +9,7 @@ import 'widgets/edit_person_dialog.dart';
 import 'widgets/add_item_dialog.dart';
 import 'widgets/item_card.dart';
 import 'widgets/person_avatar.dart';
-import 'widgets/default_item_icon.dart';
+
 import 'widgets/global_discount_dialog.dart';
 import 'widgets/ocr_results_dialog.dart';
 import 'services/export_service.dart';
@@ -67,25 +67,22 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const DefaultItemIcon(size: 24),
-            const SizedBox(width: 8),
-            Text(AppConstants.appName, style: AppTextStyles.headerStyle),
-          ],
+        toolbarHeight: 130,
+        leading: Padding(
+          padding: const EdgeInsets.all(1.0),
+          child: Image.asset(
+            'assets/images/logo.png',
+            height: 100,
+            fit: BoxFit.contain,
+          ),
         ),
+        leadingWidth: 280,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Action buttons section
-            const _ActionButtonsSection(),
-
-            const SizedBox(height: AppConstants.largePadding),
-
             // Items section
             const _ItemsSection(),
 
@@ -111,12 +108,69 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showActionBottomSheet(context),
+        backgroundColor: const Color(0xFF4DB6AC),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
-}
 
-class _ActionButtonsSection extends StatelessWidget {
-  const _ActionButtonsSection();
+  void _showActionBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext bottomSheetContext) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text('เลือกการดำเนินการ', style: AppTextStyles.subHeaderStyle),
+            const SizedBox(height: 20),
+            _BottomSheetOption(
+              icon: '📷',
+              title: 'เพิ่มจากสลิป',
+              subtitle: 'สแกนใบเสร็จเพื่อเพิ่มรายการ',
+              onTap: () {
+                Navigator.pop(bottomSheetContext);
+                _scanReceipt(context);
+              },
+            ),
+            _BottomSheetOption(
+              icon: '➕',
+              title: 'เพิ่มของ',
+              subtitle: 'เพิ่มรายการใหม่ด้วยตนเอง',
+              onTap: () {
+                Navigator.pop(bottomSheetContext);
+                _showAddItemDialog(context);
+              },
+            ),
+            _BottomSheetOption(
+              icon: '👥',
+              title: 'เพิ่มคน',
+              subtitle: 'เพิ่มคนเข้าร่วมแชร์ค่าใช้จ่าย',
+              onTap: () {
+                Navigator.pop(bottomSheetContext);
+                _showAddPersonDialog(context);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _showAddPersonDialog(BuildContext context) async {
     final billProvider = context.read<BillProvider>();
@@ -366,74 +420,40 @@ class _ActionButtonsSection extends StatelessWidget {
       }
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _ActionButton(
-            icon: '📷',
-            label: 'เพิ่มจากสลิป',
-            onTap: () => _scanReceipt(context),
-          ),
-        ),
-        const SizedBox(width: AppConstants.smallPadding),
-        Expanded(
-          child: _ActionButton(
-            icon: '➕',
-            label: 'เพิ่มของ',
-            onTap: () => _showAddItemDialog(context),
-          ),
-        ),
-        const SizedBox(width: AppConstants.smallPadding),
-        Expanded(
-          child: _ActionButton(
-            icon: '👥',
-            label: 'เพิ่มคน',
-            onTap: () => _showAddPersonDialog(context),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
-class _ActionButton extends StatelessWidget {
+class _BottomSheetOption extends StatelessWidget {
   final String icon;
-  final String label;
+  final String title;
+  final String subtitle;
   final VoidCallback onTap;
 
-  const _ActionButton({
+  const _BottomSheetOption({
     required this.icon,
-    required this.label,
+    required this.title,
+    required this.subtitle,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-      elevation: AppConstants.cardElevation,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        child: Container(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          child: Column(
-            children: [
-              Text(icon, style: AppTextStyles.emojiStyle),
-              const SizedBox(height: AppConstants.smallPadding),
-              Text(
-                label,
-                style: AppTextStyles.captionStyle,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+    return ListTile(
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: const Color(0xFF4DB6AC).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: Center(child: Text(icon, style: const TextStyle(fontSize: 24))),
       ),
+      title: Text(
+        title,
+        style: AppTextStyles.bodyStyle.copyWith(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(subtitle, style: AppTextStyles.captionStyle),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
     );
   }
 }
