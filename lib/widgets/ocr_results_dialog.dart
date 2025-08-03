@@ -93,12 +93,7 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
         .toList(); // เอาการตรวจสอบ ownerIds.isNotEmpty ออก
 
     if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณาเลือกรายการ'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppHelpers.showSnackBar(context, 'กรุณาเลือกรายการ', backgroundColor: Colors.orange);
       return;
     }
 
@@ -280,130 +275,151 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
                                 onTap: () => _editItem(index),
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Header row with checkbox, emoji, name and price
-                                    Row(
-                                      children: [
-                                        Checkbox(
-                                          value: isSelected,
-                                          onChanged: (_) => _toggleItemSelection(index),
-                                        ),
-                                        Text(
-                                          item.emoji,
-                                          style: AppTextStyles.emojiStyle,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            item.name,
-                                            style: AppTextStyles.bodyStyle,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Header row with checkbox, emoji, name and price
+                                      Row(
+                                        children: [
+                                          Checkbox(
+                                            value: isSelected,
+                                            onChanged: (_) =>
+                                                _toggleItemSelection(index),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
-                                          style: AppTextStyles.priceStyle.copyWith(
-                                            fontWeight: FontWeight.bold,
+                                          Text(
+                                            item.emoji,
+                                            style: AppTextStyles.emojiStyle,
                                           ),
-                                        ),
-                                        PopupMenuButton<String>(
-                                          onSelected: (value) {
-                                            switch (value) {
-                                              case 'edit':
-                                                _editItem(index);
-                                                break;
-                                              case 'remove':
-                                                _removeItem(index);
-                                                break;
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 16),
-                                                  SizedBox(width: 8),
-                                                  Text('แก้ไข'),
-                                                ],
-                                              ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              item.name,
+                                              style: AppTextStyles.bodyStyle,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            const PopupMenuItem(
-                                              value: 'remove',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 16,
-                                                    color: Colors.red,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'ลบ',
-                                                    style: TextStyle(
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                            style: AppTextStyles.priceStyle
+                                                .copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                          PopupMenuButton<String>(
+                                            onSelected: (value) {
+                                              switch (value) {
+                                                case 'edit':
+                                                  _editItem(index);
+                                                  break;
+                                                case 'remove':
+                                                  _removeItem(index);
+                                                  break;
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 16),
+                                                    SizedBox(width: 8),
+                                                    Text('แก้ไข'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'remove',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 16,
                                                       color: Colors.red,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'ลบ',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      // Sharing info row
+                                      if (hasOwners) ...[
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const SizedBox(
+                                              width: 48,
+                                            ), // Space for checkbox
+                                            Text(
+                                              'แชร์กับ: ',
+                                              style: AppTextStyles.captionStyle,
+                                            ),
+                                            Expanded(
+                                              child: Wrap(
+                                                spacing: 4,
+                                                children: item.ownerIds.map((
+                                                  id,
+                                                ) {
+                                                  final person = widget
+                                                      .availablePeople
+                                                      .firstWhere(
+                                                        (p) => p.id == id,
+                                                        orElse: () => Person(
+                                                          id: id,
+                                                          name: 'Unknown',
+                                                          avatar: '❓',
+                                                        ),
+                                                      );
+                                                  return PersonAvatar(
+                                                    person: person,
+                                                    size: 24,
+                                                    emojiAsIcon: true,
+                                                  );
+                                                }).toList(),
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ],
-                                    ),
-                                    // Sharing info row
-                                    if (hasOwners) ...[
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const SizedBox(width: 48), // Space for checkbox
-                                          Text(
-                                            'แชร์กับ: ',
-                                            style: AppTextStyles.captionStyle,
-                                          ),
-                                          Expanded(
-                                            child: Wrap(
-                                              spacing: 4,
-                                              children: item.ownerIds.map((id) {
-                                                final person = widget.availablePeople.firstWhere(
-                                                  (p) => p.id == id,
-                                                  orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
-                                                );
-                                                return PersonAvatar(person: person, size: 24, emojiAsIcon: true);
-                                              }).toList(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ] else ...[
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const SizedBox(width: 48), // Space for checkbox
-                                          Icon(
-                                            Icons.warning_amber,
-                                            size: 16,
-                                            color: Colors.orange.shade600,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'ยังไม่ได้เลือกคนแชร์',
-                                            style: AppTextStyles.captionStyle.copyWith(
+                                      ] else ...[
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const SizedBox(
+                                              width: 48,
+                                            ), // Space for checkbox
+                                            Icon(
+                                              Icons.warning_amber,
+                                              size: 16,
                                               color: Colors.orange.shade600,
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'ยังไม่ได้เลือกคนแชร์',
+                                              style: AppTextStyles.captionStyle
+                                                  .copyWith(
+                                                    color:
+                                                        Colors.orange.shade600,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
                             );
                           },
                         ),
@@ -604,7 +620,11 @@ class _EditItemDialogState extends State<_EditItemDialog> {
                   children: widget.availablePeople.map((person) {
                     final isSelected = _selectedOwnerIds.contains(person.id);
                     return FilterChip(
-                      avatar: PersonAvatar(person: person, size: 28, showBorder: false),
+                      avatar: PersonAvatar(
+                        person: person,
+                        size: 28,
+                        showBorder: false,
+                      ),
                       label: Text(person.name),
                       selected: isSelected,
                       onSelected: (_) => _toggleOwner(person.id),

@@ -5,14 +5,14 @@ import '../models/person.dart';
 import '../utils/constants.dart';
 import 'person_avatar.dart';
 
-
 class ItemCard extends StatefulWidget {
   final Item item;
   final List<Person> people;
   final bool showHintAnimation;
   final VoidCallback? onDelete;
   final Function(double discount)? onDiscount;
-  final Function(List<String> ownerIds)? onOwnersChanged; // เพิ่ม callback สำหรับเปลี่ยนคนที่แชร์
+  final Function(List<String> ownerIds)?
+  onOwnersChanged; // เพิ่ม callback สำหรับเปลี่ยนคนที่แชร์
 
   const ItemCard({
     super.key,
@@ -192,11 +192,12 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
             child: Card(
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               child: ListTile(
-                onTap: _showOwnerSelectionDialog, // เพิ่ม onTap เพื่อเลือกคนที่แชร์
+                onTap:
+                    _showOwnerSelectionDialog, // เพิ่ม onTap เพื่อเลือกคนที่แชร์
                 leading: Text(
-                      widget.item.emoji,
-                      style: AppTextStyles.emojiStyle,
-                    ),
+                  widget.item.emoji,
+                  style: AppTextStyles.emojiStyle,
+                ),
                 title: Text(widget.item.name, style: AppTextStyles.bodyStyle),
                 subtitle: widget.item.hasDiscount
                     ? Column(
@@ -228,7 +229,7 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
                         '${widget.item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
                         style: AppTextStyles.priceStyle,
                       ),
-                trailing: widget.item.ownerIds.isEmpty 
+                trailing: widget.item.ownerIds.isEmpty
                     ? Text(
                         'แตะเพื่อเลือกคนที่แชร์',
                         style: AppTextStyles.captionStyle.copyWith(
@@ -242,11 +243,16 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
                         children: widget.item.ownerIds.map((id) {
                           final person = widget.people.firstWhere(
                             (p) => p.id == id,
-                            orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
+                            orElse: () =>
+                                Person(id: id, name: 'Unknown', avatar: '❓'),
                           );
                           return Padding(
                             padding: const EdgeInsets.only(left: 4),
-                            child: PersonAvatar(person: person, size: 24, emojiAsIcon: true),
+                            child: PersonAvatar(
+                              person: person,
+                              size: 24,
+                              emojiAsIcon: true,
+                            ),
                           );
                         }).toList(),
                       ),
@@ -544,7 +550,9 @@ class _OwnerSelectionDialogState extends State<_OwnerSelectionDialog> {
                 padding: const EdgeInsets.all(AppConstants.defaultPadding),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.orange.shade300),
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadius,
+                  ),
                   color: Colors.orange.shade50,
                 ),
                 child: Row(
@@ -578,7 +586,7 @@ class _OwnerSelectionDialogState extends State<_OwnerSelectionDialog> {
                   ),
                 ],
               ),
-              
+
               // People selection
               Container(
                 constraints: const BoxConstraints(maxHeight: 200),

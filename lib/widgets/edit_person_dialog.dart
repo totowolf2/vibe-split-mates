@@ -36,7 +36,7 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.person.name);
     _selectedAvatar = widget.person.avatar;
-    
+
     // Load existing image if available
     if (widget.person.hasProfilePicture) {
       _selectedImage = File(widget.person.imagePath!);
@@ -51,7 +51,7 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
 
   bool _isNameTaken(String name) {
     return widget.existingPeople.any(
-      (person) => 
+      (person) =>
           person.id != widget.person.id &&
           person.name.toLowerCase() == name.toLowerCase().trim(),
     );
@@ -87,12 +87,7 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ไม่สามารถเลือกรูปภาพได้: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, 'ไม่สามารถเลือกรูปภาพได้: $e', backgroundColor: Colors.red);
       }
     }
   }
@@ -114,12 +109,7 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ไม่สามารถถ่ายรูปได้: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, 'ไม่สามารถถ่ายรูปได้: $e', backgroundColor: Colors.red);
       }
     }
   }
@@ -158,7 +148,10 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
             if (_selectedImage != null || widget.person.hasProfilePicture)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('ลบรูปภาพ', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'ลบรูปภาพ',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _removeImage();
@@ -177,8 +170,9 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
       if (!await profilesDir.exists()) {
         await profilesDir.create(recursive: true);
       }
-      
-      final fileName = '${widget.person.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      final fileName =
+          '${widget.person.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final savedImage = await imageFile.copy('${profilesDir.path}/$fileName');
       return savedImage.path;
     } catch (e) {
@@ -205,23 +199,18 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
 
     try {
       String? imagePath = widget.person.imagePath;
-      
+
       // Handle image changes
       if (_hasChangedImage) {
         // Delete old image if exists
         await _deleteOldImage();
-        
+
         if (_selectedImage != null) {
           // Save new image
           imagePath = await _saveImageToProfile(_selectedImage!);
           if (imagePath == null) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('ไม่สามารถบันทึกรูปภาพได้'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              AppHelpers.showSnackBar(context, 'ไม่สามารถบันทึกรูปภาพได้', backgroundColor: Colors.red);
             }
             return;
           }
@@ -242,12 +231,7 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เกิดข้อผิดพลาด: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, 'เกิดข้อผิดพลาด: $e', backgroundColor: Colors.red);
       }
     }
   }
@@ -314,24 +298,31 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
                                           ? Image.file(
                                               _selectedImage!,
                                               fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                return Container(
-                                                  color: Colors.grey.shade100,
-                                                  child: Center(
-                                                    child: Text(
-                                                      _selectedAvatar,
-                                                      style: const TextStyle(fontSize: 40),
-                                                    ),
-                                                  ),
-                                                );
-                                              },
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Container(
+                                                      color:
+                                                          Colors.grey.shade100,
+                                                      child: Center(
+                                                        child: Text(
+                                                          _selectedAvatar,
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 40,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
                                             )
                                           : Container(
                                               color: Colors.grey.shade100,
                                               child: Center(
                                                 child: Text(
                                                   _selectedAvatar,
-                                                  style: const TextStyle(fontSize: 40),
+                                                  style: const TextStyle(
+                                                    fontSize: 40,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -478,10 +469,13 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
                                               ? AppConstants.primaryColor
                                                     .withValues(alpha: 0.2)
                                               : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                           border: isSelected
                                               ? Border.all(
-                                                  color: AppConstants.primaryColor,
+                                                  color:
+                                                      AppConstants.primaryColor,
                                                   width: 2,
                                                 )
                                               : null,
@@ -489,7 +483,9 @@ class _EditPersonDialogState extends State<EditPersonDialog> {
                                         child: Center(
                                           child: Text(
                                             emoji,
-                                            style: const TextStyle(fontSize: 20),
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                            ),
                                           ),
                                         ),
                                       ),

@@ -138,7 +138,7 @@ class EmojiUtils {
     'บริการ': '🔧',
     'parking': '🅿️',
     'จอดรถ': '🅿️',
-    
+
     // OCR common results
     'รายการสินค้า': '', // Empty string will trigger random emoji
     'สินค้า': '', // Empty string will trigger random emoji
@@ -156,29 +156,33 @@ class EmojiUtils {
     '🍲', '🍛', '🍚', '🍞', '🧀', '🥓', '🍳', '🥞', '🧇', '🥨',
     '🍖', '🍗', '🥩', '🌶️', '🥒', '🥬', '🥑', '🍅', '🧄', '🧅',
     '🥕', '🌽', '🥦', '🥔', '🍠', '🫘', '🥜', '🌰', '🍄', '🫐',
-    
+
     // Drinks variety
     '☕', '🍵', '🧃', '🥤', '🧋', '🍶', '🍾', '🍷', '🍸', '🍹',
     '🍺', '🍻', '🥂', '🥛', '🫖', '🧊', '💧', '🥥', '🍯', '🫙',
-    
+
     // Fruits
     '🍎', '🍌', '🍊', '🍇', '🍓', '🍉', '🍍', '🥭', '🍑', '🍒',
     '🥝', '🫒', '🥥', '🍈', '🍋', '🥔', '🫚', '🌶️',
-    
+
     // Fun decorative
     '🎉', '✨', '🌟', '⭐', '🎊', '🎈', '🎁', '🎀', '🌈', '🦄',
     '🎯', '🎪', '🎨', '🎭', '🎮', '🎲', '🍀', '🌸', '🌺', '🌻',
     '🌼', '💫', '⚡', '🔥', '❤️', '💖', '💝', '🎵', '🎶', '🎼',
     '🌙', '☀️', '💎', '🎡', '🎢', '🎠', '🖼️', '🎪',
-    
+
     // Objects and items
     '📱', '💻', '⌚', '📷', '🎧', '🎤', '🎮', '🕹️', '🎲', '🃏',
     '🎯', '🎳', '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏓',
-    '🥅', '⛳', '🏹', '🎣', '🛷', '🛼', '🛹', '🛴', '🚲'
+    '🥅', '⛳', '🏹', '🎣', '🛷', '🛼', '🛹', '🛴', '🚲',
   ];
 
   /// Generate emoji based on item name
-  static String generateEmoji(String itemName, {int? additionalSeed, bool forceRandom = false}) {
+  static String generateEmoji(
+    String itemName, {
+    int? additionalSeed,
+    bool forceRandom = false,
+  }) {
     final lowerName = itemName.toLowerCase().trim();
 
     // Check for exact matches first (unless forced random)
@@ -215,12 +219,18 @@ class EmojiUtils {
     final hash = itemName.hashCode.abs();
     final nameLength = itemName.length;
     final firstChar = itemName.isNotEmpty ? itemName.codeUnitAt(0) : 0;
-    
+
     // Use multiple entropy sources for true randomness
     final seed = additionalSeed ?? 0;
     final timeEntropy = now.millisecondsSinceEpoch + now.microsecond;
-    final randomSeed = (hash * 31 + nameLength * 17 + firstChar * 13 + seed * 7 + timeEntropy * 3) % 1000000;
-    
+    final randomSeed =
+        (hash * 31 +
+            nameLength * 17 +
+            firstChar * 13 +
+            seed * 7 +
+            timeEntropy * 3) %
+        1000000;
+
     // Use a simple linear congruential generator for better distribution
     final random = (randomSeed * 1103515245 + 12345) % _randomFunEmojis.length;
     return _randomFunEmojis[random];

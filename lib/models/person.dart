@@ -5,20 +5,15 @@ class Person {
   final String? imagePath; // Profile picture file path
 
   Person({
-    required this.id, 
-    required this.name, 
+    required this.id,
+    required this.name,
     required this.avatar,
     this.imagePath,
   });
 
   // JSON serialization
   Map<String, dynamic> toJson() {
-    return {
-      'id': id, 
-      'name': name, 
-      'avatar': avatar,
-      'imagePath': imagePath,
-    };
+    return {'id': id, 'name': name, 'avatar': avatar, 'imagePath': imagePath};
   }
 
   // JSON deserialization
@@ -48,7 +43,12 @@ class Person {
   }
 
   // Copy with method for updates
-  Person copyWith({String? id, String? name, String? avatar, String? imagePath}) {
+  Person copyWith({
+    String? id,
+    String? name,
+    String? avatar,
+    String? imagePath,
+  }) {
     return Person(
       id: id ?? this.id,
       name: name ?? this.name,

@@ -95,14 +95,12 @@ class BillProvider with ChangeNotifier {
           final updatedPeople = _currentBill!.people
               .where((p) => p.id != personId)
               .toList();
-          final updatedItems = _currentBill!.items
-              .map((item) {
-                final updatedOwners = item.ownerIds
-                    .where((id) => id != personId)
-                    .toList();
-                return item.copyWith(ownerIds: updatedOwners);
-              })
-              .toList(); // Keep items even if they have no owners
+          final updatedItems = _currentBill!.items.map((item) {
+            final updatedOwners = item.ownerIds
+                .where((id) => id != personId)
+                .toList();
+            return item.copyWith(ownerIds: updatedOwners);
+          }).toList(); // Keep items even if they have no owners
 
           _currentBill = _currentBill!.copyWith(
             people: updatedPeople,
@@ -139,7 +137,9 @@ class BillProvider with ChangeNotifier {
 
         // Also update in current bill if present
         if (_currentBill != null) {
-          final billPersonIndex = _currentBill!.people.indexWhere((p) => p.id == updatedPerson.id);
+          final billPersonIndex = _currentBill!.people.indexWhere(
+            (p) => p.id == updatedPerson.id,
+          );
           if (billPersonIndex != -1) {
             final updatedPeople = [..._currentBill!.people];
             updatedPeople[billPersonIndex] = updatedPerson;
@@ -175,14 +175,12 @@ class BillProvider with ChangeNotifier {
     final updatedPeople = _currentBill!.people
         .where((p) => p.id != personId)
         .toList();
-    final updatedItems = _currentBill!.items
-        .map((item) {
-          final updatedOwners = item.ownerIds
-              .where((id) => id != personId)
-              .toList();
-          return item.copyWith(ownerIds: updatedOwners);
-        })
-        .toList(); // Keep items even if they have no owners
+    final updatedItems = _currentBill!.items.map((item) {
+      final updatedOwners = item.ownerIds
+          .where((id) => id != personId)
+          .toList();
+      return item.copyWith(ownerIds: updatedOwners);
+    }).toList(); // Keep items even if they have no owners
 
     _currentBill = _currentBill!.copyWith(
       people: updatedPeople,

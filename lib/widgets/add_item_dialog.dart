@@ -14,7 +14,7 @@ class AddItemDialog extends StatefulWidget {
   final Item? existingItem; // For editing existing items
 
   const AddItemDialog({
-    super.key, 
+    super.key,
     required this.availablePeople,
     this.existingItem,
   });
@@ -37,7 +37,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   void initState() {
     super.initState();
     _nameController.addListener(_onNameChanged);
-    
+
     // If editing existing item, populate the fields
     if (widget.existingItem != null) {
       final item = widget.existingItem!;
@@ -58,10 +58,10 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   void _onNameChanged() {
     final name = _nameController.text.trim();
-    
+
     // For editing items: if name changes significantly, reset to auto-generate
-    if (widget.existingItem != null && 
-        name.isNotEmpty && 
+    if (widget.existingItem != null &&
+        name.isNotEmpty &&
         name != widget.existingItem!.name) {
       // Name changed during editing - reset to auto-generate
       final autoEmoji = EmojiUtils.generateEmoji(name);
@@ -71,7 +71,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
       });
       return;
     }
-    
+
     // For new items: auto-generate if user hasn't manually selected
     if (name.isNotEmpty && !_userSelectedEmoji) {
       final autoEmoji = EmojiUtils.generateEmoji(name);
@@ -126,7 +126,9 @@ class _AddItemDialogState extends State<AddItemDialog> {
         name: _nameController.text.trim(),
         price: double.parse(_priceController.text),
         emoji: _selectedEmoji,
-        ownerIds: List<String>.from(_selectedOwnerIds), // ตอนนี้ยอมให้เป็น empty list ได้
+        ownerIds: List<String>.from(
+          _selectedOwnerIds,
+        ), // ตอนนี้ยอมให้เป็น empty list ได้
       );
 
       Navigator.of(context).pop(item);
@@ -152,7 +154,9 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     const Text('➕', style: AppTextStyles.emojiStyle),
                     const SizedBox(width: AppConstants.smallPadding),
                     Text(
-                      widget.existingItem != null ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่',
+                      widget.existingItem != null
+                          ? 'แก้ไขรายการ'
+                          : 'เพิ่มรายการใหม่',
                       style: AppTextStyles.subHeaderStyle,
                     ),
                     const Spacer(),
@@ -192,12 +196,12 @@ class _AddItemDialogState extends State<AddItemDialog> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _selectedEmoji == '🍽️' 
-                                    ? const DefaultItemIcon(size: 24) 
-                                    : Text(
-                                        _selectedEmoji,
-                                        style: const TextStyle(fontSize: 24),
-                                      ),
+                                  _selectedEmoji == '🍽️'
+                                      ? const DefaultItemIcon(size: 24)
+                                      : Text(
+                                          _selectedEmoji,
+                                          style: const TextStyle(fontSize: 24),
+                                        ),
                                   Text(
                                     'แตะ',
                                     style: AppTextStyles.captionStyle.copyWith(
@@ -343,7 +347,11 @@ class _AddItemDialogState extends State<AddItemDialog> {
                                   person.id,
                                 );
                                 return FilterChip(
-                                  avatar: PersonAvatar(person: person, size: 28, showBorder: false),
+                                  avatar: PersonAvatar(
+                                    person: person,
+                                    size: 28,
+                                    showBorder: false,
+                                  ),
                                   label: Text(person.name),
                                   selected: isSelected,
                                   onSelected: (_) => _toggleOwner(person.id),
@@ -474,8 +482,11 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     const SizedBox(width: AppConstants.defaultPadding),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _submitForm, // ตอนนี้เพิ่มได้เสมอ ไม่ต้องมีคนก่อน
-                        child: Text(widget.existingItem != null ? 'บันทึก' : 'เพิ่ม'),
+                        onPressed:
+                            _submitForm, // ตอนนี้เพิ่มได้เสมอ ไม่ต้องมีคนก่อน
+                        child: Text(
+                          widget.existingItem != null ? 'บันทึก' : 'เพิ่ม',
+                        ),
                       ),
                     ),
                   ],

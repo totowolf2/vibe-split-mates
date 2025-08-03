@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 
 import '../models/person.dart';
+import '../utils/constants.dart';
 
 class PersonAvatar extends StatelessWidget {
   final Person person;
@@ -27,10 +28,7 @@ class PersonAvatar extends StatelessWidget {
         width: size,
         height: size,
         child: Center(
-          child: Text(
-            person.avatar,
-            style: TextStyle(fontSize: size * 0.8),
-          ),
+          child: Text(person.avatar, style: TextStyle(fontSize: size * 0.8)),
         ),
       );
     }
@@ -43,7 +41,7 @@ class PersonAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: showBorder
             ? Border.all(
-                color: borderColor ?? Colors.grey.shade300,
+                color: borderColor ?? AppConstants.dividerColor,
                 width: 1,
               )
             : null,

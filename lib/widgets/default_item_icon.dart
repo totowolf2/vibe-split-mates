@@ -4,11 +4,7 @@ class DefaultItemIcon extends StatelessWidget {
   final double size;
   final Color? color;
 
-  const DefaultItemIcon({
-    super.key,
-    this.size = 24.0,
-    this.color,
-  });
+  const DefaultItemIcon({super.key, this.size = 24.0, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +19,7 @@ class DefaultItemIcon extends StatelessWidget {
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           // Fallback to emoji if image fails to load
-          return Text(
-            '🍽️',
-            style: TextStyle(fontSize: size * 0.8),
-          );
+          return Text('🍽️', style: TextStyle(fontSize: size * 0.8));
         },
       ),
     );

@@ -33,10 +33,18 @@ class SplitMatesApp extends StatelessWidget {
       child: MaterialApp(
         title: AppConstants.appName,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppConstants.primaryColor,
-            surface: AppConstants.backgroundColor,
-          ),
+          colorScheme:
+              ColorScheme.fromSeed(
+                seedColor: AppConstants.primaryColor,
+                surface: AppConstants.backgroundColor,
+                brightness: Brightness.light,
+              ).copyWith(
+                primary: AppConstants.primaryColor,
+                surface: AppConstants.backgroundColor,
+                onSurface: AppConstants.primaryText,
+                onSurfaceVariant: AppConstants.secondaryText,
+                outline: AppConstants.dividerColor,
+              ),
           textTheme: GoogleFonts.notoSansThaiTextTheme(),
           useMaterial3: true,
           appBarTheme: const AppBarTheme(
@@ -110,7 +118,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showActionBottomSheet(context),
-        backgroundColor: const Color(0xFF4DB6AC),
+        backgroundColor: AppConstants.accentColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -198,25 +206,11 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
         billProvider.addPersonToBill(person);
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isExistingPerson
-                    ? 'เพิ่ม ${person.name} เข้าร่วมแล้ว'
-                    : 'เพิ่ม ${person.name} เรียบร้อย',
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppHelpers.showSnackBar(context, isExistingPerson ? 'เพิ่ม ${person.name} เข้าร่วมแล้ว' : 'เพิ่ม ${person.name} เรียบร้อย', backgroundColor: Colors.green);
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ไม่สามารถเพิ่มคนได้ อาจมีชื่อซ้ำ'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppHelpers.showSnackBar(context, 'ไม่สามารถเพิ่มคนได้ อาจมีชื่อซ้ำ', backgroundColor: Colors.red);
         }
       }
     }
@@ -257,13 +251,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading
         // Show brief tip as snackbar instead of blocking dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('💡 วาดกรอบรอบส่วนของใบเสร็จ เพื่อสแกนได้แม่นยำ'),
-            duration: Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppHelpers.showSnackBar(context, '💡 วาดกรอบรอบส่วนของใบเสร็จ เพื่อสแกนได้แม่นยำ', duration: Duration(seconds: 3));
 
         // Show loading again
         if (context.mounted) {
@@ -310,12 +298,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
       if (!ImageService.validateImageFile(imageFile)) {
         if (context.mounted) {
           Navigator.of(context).pop(); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('รูปภาพไม่ถูกต้องหรือไฟล์ใหญ่เกินไป'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppHelpers.showSnackBar(context, 'รูปภาพไม่ถูกต้องหรือไฟล์ใหญ่เกินไป', backgroundColor: Colors.red);
         }
         return;
       }
@@ -328,12 +311,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
       if (extractedText == null || extractedText.trim().isEmpty) {
         if (context.mounted) {
           Navigator.of(context).pop(); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ไม่พบข้อความในรูปภาพ กรุณาลองใหม่'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppHelpers.showSnackBar(context, 'ไม่พบข้อความในรูปภาพ กรุณาลองใหม่', backgroundColor: Colors.red);
         }
         // Clean up image file
         await ImageService.cleanupTempFiles([imageFile.path]);
@@ -371,14 +349,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
           billProvider.addItems(selectedItems);
 
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'เพิ่ม ${selectedItems.length} รายการจากการสแกนเรียบร้อย',
-                ),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppHelpers.showSnackBar(context, 'เพิ่ม ${selectedItems.length} รายการจากการสแกนเรียบร้อย', backgroundColor: Colors.green);
           }
         }
       }
@@ -389,12 +360,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
       // Close loading dialog if still open
       if (context.mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เกิดข้อผิดพลาด: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, 'เกิดข้อผิดพลาด: $e', backgroundColor: Colors.red);
       }
     }
   }
@@ -411,12 +377,7 @@ class _SplitMatesHomePageState extends State<SplitMatesHomePage> {
       billProvider.addItem(item);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เพิ่ม ${item.name} เรียบร้อย'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppHelpers.showSnackBar(context, 'เพิ่ม ${item.name} เรียบร้อย', backgroundColor: Colors.green);
       }
     }
   }
@@ -442,7 +403,7 @@ class _BottomSheetOption extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFF4DB6AC).withValues(alpha: 0.1),
+          color: AppConstants.accentColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(child: Text(icon, style: const TextStyle(fontSize: 24))),
@@ -529,32 +490,14 @@ class _ItemsSection extends StatelessWidget {
                                 billProvider.isFirstItem && index == 0,
                             onDelete: () {
                               billProvider.removeItem(item.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('ลบ ${item.name} เรียบร้อย'),
-                                  backgroundColor: Colors.red.shade600,
-                                ),
-                              );
+                              AppHelpers.showSnackBar(context, 'ลบ ${item.name} เรียบร้อย', backgroundColor: Colors.red.shade600);
                             },
                             onDiscount: (discount) {
                               billProvider.addDiscountToItem(item.id, discount);
                               if (discount > 0) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'ใส่ส่วนลด ${AppConstants.currencySymbol}${discount.toStringAsFixed(2)} ให้ ${item.name}',
-                                    ),
-                                    backgroundColor: Colors.green.shade600,
-                                  ),
-                                );
+                                AppHelpers.showSnackBar(context, 'ใส่ส่วนลด ${AppConstants.currencySymbol}${discount.toStringAsFixed(2)} ให้ ${item.name}', backgroundColor: Colors.green.shade600);
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'ลบส่วนลดของ ${item.name} เรียบร้อย',
-                                    ),
-                                  ),
-                                );
+                                AppHelpers.showSnackBar(context, 'ลบส่วนลดของ ${item.name} เรียบร้อย');
                               }
                             },
                             onOwnersChanged: (ownerIds) {
@@ -562,16 +505,7 @@ class _ItemsSection extends StatelessWidget {
                                 ownerIds: ownerIds,
                               );
                               billProvider.updateItem(item.id, updatedItem);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    ownerIds.isEmpty
-                                        ? 'ลบคนที่แชร์ ${item.name} เรียบร้อย'
-                                        : 'อัปเดตคนที่แชร์ ${item.name} เรียบร้อย',
-                                  ),
-                                  backgroundColor: Colors.blue.shade600,
-                                ),
-                              );
+                              AppHelpers.showSnackBar(context, ownerIds.isEmpty ? 'ลบคนที่แชร์ ${item.name} เรียบร้อย' : 'อัปเดตคนที่แชร์ ${item.name} เรียบร้อย', backgroundColor: Colors.blue.shade600);
                             },
                           );
                         },
@@ -638,22 +572,10 @@ class _PeopleSection extends StatelessWidget {
                             onTap: () {
                               if (isInBill) {
                                 billProvider.removePersonFromBill(person.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'ลบ ${person.name} ออกจากบิล',
-                                    ),
-                                  ),
-                                );
+                                AppHelpers.showSnackBar(context, 'ลบ ${person.name} ออกจากบิล');
                               } else {
                                 billProvider.addPersonToBill(person);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'เพิ่ม ${person.name} เข้าบิล',
-                                    ),
-                                  ),
-                                );
+                                AppHelpers.showSnackBar(context, 'เพิ่ม ${person.name} เข้าบิล');
                               }
                             },
                             onLongPress: () {
@@ -670,22 +592,10 @@ class _PeopleSection extends StatelessWidget {
                               onSelected: (selected) {
                                 if (selected) {
                                   billProvider.addPersonToBill(person);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'เพิ่ม ${person.name} เข้าบิล',
-                                      ),
-                                    ),
-                                  );
+                                  AppHelpers.showSnackBar(context, 'เพิ่ม ${person.name} เข้าบิล');
                                 } else {
                                   billProvider.removePersonFromBill(person.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'ลบ ${person.name} ออกจากบิล',
-                                      ),
-                                    ),
-                                  );
+                                  AppHelpers.showSnackBar(context, 'ลบ ${person.name} ออกจากบิล');
                                 }
                               },
                               selectedColor: AppConstants.primaryColor
@@ -771,16 +681,7 @@ class _PeopleSection extends StatelessWidget {
     if (updatedPerson != null) {
       final success = await billProvider.updateSavedPerson(updatedPerson);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'แก้ไขข้อมูล ${updatedPerson.name} เรียบร้อย'
-                  : 'ไม่สามารถแก้ไขข้อมูลได้ อาจมีชื่อซ้ำ',
-            ),
-            backgroundColor: success ? Colors.green : Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, success ? 'แก้ไขข้อมูล ${updatedPerson.name} เรียบร้อย' : 'ไม่สามารถแก้ไขข้อมูลได้ อาจมีชื่อซ้ำ', backgroundColor: success ? Colors.green : Colors.red);
       }
     }
   }
@@ -826,14 +727,7 @@ class _PeopleSection extends StatelessWidget {
     if (confirmed == true) {
       final success = await billProvider.removeSavedPerson(person.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? 'ลบ ${person.name} เรียบร้อย' : 'ไม่สามารถลบได้',
-            ),
-            backgroundColor: success ? Colors.green : Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, success ? 'ลบ ${person.name} เรียบร้อย' : 'ไม่สามารถลบได้', backgroundColor: success ? Colors.green : Colors.red);
       }
     }
   }
@@ -846,12 +740,7 @@ class _GlobalDiscountSection extends StatelessWidget {
     final billProvider = context.read<BillProvider>();
 
     if (billProvider.subtotal <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณาเพิ่มรายการก่อนเพื่อใส่ส่วนลด'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppHelpers.showSnackBar(context, 'กรุณาเพิ่มรายการก่อนเพื่อใส่ส่วนลด', backgroundColor: Colors.orange);
       return;
     }
 
@@ -867,21 +756,12 @@ class _GlobalDiscountSection extends StatelessWidget {
       if (result == 'remove') {
         billProvider.removeGlobalDiscount();
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('ลบส่วนลดรวมเรียบร้อย')));
+          AppHelpers.showSnackBar(context, 'ลบส่วนลดรวมเรียบร้อย');
         }
       } else if (result is BillDiscount) {
         billProvider.setGlobalDiscount(result);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'ใส่ส่วนลดรวม ${AppConstants.currencySymbol}${billProvider.globalDiscountAmount.toStringAsFixed(2)} เรียบร้อย',
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
+          AppHelpers.showSnackBar(context, 'ใส่ส่วนลดรวม ${AppConstants.currencySymbol}${billProvider.globalDiscountAmount.toStringAsFixed(2)} เรียบร้อย', backgroundColor: Colors.green);
         }
       }
     }
@@ -1220,34 +1100,19 @@ class _BottomButtonsSection extends StatelessWidget {
 
     // Check if there's anything to export
     if (billProvider.people.isEmpty || billProvider.items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ไม่มีข้อมูลเพื่อส่งออก กรุณาเพิ่มรายการและคนก่อน'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppHelpers.showSnackBar(context, 'ไม่มีข้อมูลเพื่อส่งออก กรุณาเพิ่มรายการและคนก่อน', backgroundColor: Colors.orange);
       return;
     }
 
     // Check if platform supports export
     if (!ExportService.isSupported) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ไม่รองรับการส่งออกรูปภาพในอุปกรณ์นี้'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppHelpers.showSnackBar(context, 'ไม่รองรับการส่งออกรูปภาพในอุปกรณ์นี้', backgroundColor: Colors.red);
       return;
     }
 
     // Validate widget is ready for export
     if (!ExportService.validateForExport(summaryKey)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('กรุณารอสักครู่แล้วลองใหม่'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppHelpers.showSnackBar(context, 'กรุณารอสักครู่แล้วลองใหม่', backgroundColor: Colors.orange);
       return;
     }
 
@@ -1293,38 +1158,18 @@ class _BottomButtonsSection extends StatelessWidget {
 
       if (success) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('บันทึกรูปภาพเรียบร้อย'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
+          AppHelpers.showSnackBar(context, 'บันทึกรูปภาพเรียบร้อย', backgroundColor: Colors.green, duration: Duration(seconds: 3));
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('ไม่สามารถบันทึกรูปภาพได้'),
-              backgroundColor: Colors.red,
-              action: SnackBarAction(
-                label: 'ตั้งค่า',
-                onPressed: () => ExportService.openAppSettings(),
-              ),
-            ),
-          );
+          AppHelpers.showSnackBar(context, 'ไม่สามารถบันทึกรูปภาพได้', backgroundColor: Colors.red, action: SnackBarAction(label: 'ตั้งค่า', onPressed: () => ExportService.openAppSettings()));
         }
       }
     } catch (e) {
       // Close loading dialog
       if (context.mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เกิดข้อผิดพลาด: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppHelpers.showSnackBar(context, 'เกิดข้อผิดพลาด: $e', backgroundColor: Colors.red);
       }
     }
   }
@@ -1337,9 +1182,7 @@ class _BottomButtonsSection extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () {
               context.read<BillProvider>().resetBill();
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Reset เรียบร้อย')));
+              AppHelpers.showSnackBar(context, 'Reset เรียบร้อย');
             },
             icon: const Text('🔄'),
             label: const Text('Reset'),

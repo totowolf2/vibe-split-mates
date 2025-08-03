@@ -53,11 +53,8 @@ class ExportService {
           filename ?? 'splitmates_${DateTime.now().millisecondsSinceEpoch}.png';
 
       // Save to gallery using Gal
-      await Gal.putImageBytes(
-        pngBytes,
-        name: fileName,
-      );
-      
+      await Gal.putImageBytes(pngBytes, name: fileName);
+
       // If no exception thrown, save was successful
       if (kDebugMode) {
         print('Image saved successfully: $fileName');

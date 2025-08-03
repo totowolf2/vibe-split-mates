@@ -5,24 +5,53 @@ class AppConstants {
   static const String appName = 'SplitMates';
   static const String appVersion = '1.0.0';
 
-  // Colors
-  static const Color primaryColor = Color(0xFF2196F3);
+  // Colors - Minimal + Friendly Theme
+  static const Color primaryColor = Color(
+    0xFF4DB6AC,
+  ); // Accent green for primary actions
   static const Color secondaryColor = Color(0xFF03DAC6);
   static const Color errorColor = Color(0xFFB00020);
-  static const Color backgroundColor = Color(0xFFFAFAFA);
+  static const Color backgroundColor = Color(
+    0xFFFFFDF9,
+  ); // Light cream background
+
+  // New theme colors
+  static const Color cardBackground = Color(0xFFFFFFFF); // Pure white for cards
+  static const Color primaryText = Color(
+    0xFF222222,
+  ); // Dark text for headers/labels
+  static const Color secondaryText = Color(
+    0xFF666666,
+  ); // Medium gray for secondary text
+  static const Color mutedText = Color(0xFFB0B0B0); // Light gray for muted info
+  static const Color accentColor = Color(
+    0xFF4DB6AC,
+  ); // Pastel green for actions/icons
+  static const Color dividerColor = Color(
+    0xFFE0E0E0,
+  ); // Light gray for dividers
+  static const Color summaryHighlightBg = Color(
+    0xFFF9F9F9,
+  ); // Very light background for summary
 
   // Discount Colors
   static const Color discountColor = Color(
-    0xFFE53935,
-  ); // Red for discounted price
+    0xFFD32F2F,
+  ); // Dark red for discounted prices
   static const Color originalPriceColor = Color(
-    0xFF9E9E9E,
-  ); // Gray for crossed out price
+    0xFFB0B0B0,
+  ); // Muted text for crossed out price
+
+  // Avatar bubble colors (pastel palette)
+  static const Color avatarBubbleA = Color(0xFFFFD54F); // Pastel yellow
+  static const Color avatarBubbleB = Color(0xFFFF8A65); // Pastel orange
+  static const Color avatarBubbleC = Color(0xFF81C784); // Pastel green
 
   // Animation durations
   static const Duration hintAnimationDuration = Duration(milliseconds: 1500);
   static const Duration cardAnimationDuration = Duration(milliseconds: 300);
   static const Duration swipeAnimationDuration = Duration(milliseconds: 200);
+  static const Duration snackBarDuration = Duration(milliseconds: 600);
 
   // UI Measurements
   static const double defaultPadding = 16.0;
@@ -102,29 +131,29 @@ class AppTextStyles {
   static const TextStyle headerStyle = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: Colors.black87,
+    color: AppConstants.primaryText, // Dark text for headers
   );
 
   static const TextStyle subHeaderStyle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: Colors.black87,
+    color: AppConstants.primaryText, // Dark text for headers/labels
   );
 
   static const TextStyle bodyStyle = TextStyle(
     fontSize: 16,
-    color: Colors.black87,
+    color: AppConstants.primaryText, // Dark text for body content
   );
 
   static const TextStyle captionStyle = TextStyle(
     fontSize: 14,
-    color: Colors.black54,
+    color: AppConstants.secondaryText, // Medium gray for secondary text
   );
 
   static const TextStyle priceStyle = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: Colors.black87,
+    color: AppConstants.primaryText, // Dark text for prices
   );
 
   static const TextStyle discountedPriceStyle = TextStyle(
@@ -146,4 +175,25 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     color: Colors.white,
   );
+}
+
+/// Helper class for consistent UI components
+class AppHelpers {
+  /// Shows a standardized SnackBar with consistent duration and styling
+  static void showSnackBar(
+    BuildContext context,
+    String message, {
+    Color? backgroundColor,
+    Duration? duration,
+    SnackBarAction? action,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        duration: duration ?? AppConstants.snackBarDuration,
+        action: action,
+      ),
+    );
+  }
 }

@@ -27,14 +27,10 @@ class OCRService {
     }
   }
 
-
-
-
-
   /// Parse items from OCR text with improved Thai receipt format handling
   static List<Item> parseItemsFromText(String text) {
     final items = <Item>[];
-    
+
     // Use raw text first to get better parsing results
     final rawLines = text
         .split('\n')
@@ -48,7 +44,7 @@ class OCRService {
 
     // Try parsing raw text first (before enhancement)
     final reconstructedItems = _reconstructReceiptItems(rawLines);
-    
+
     for (int i = 0; i < reconstructedItems.length; i++) {
       final itemData = reconstructedItems[i];
       final item = _parseReconstructedItem(itemData, i);
@@ -73,14 +69,16 @@ class OCRService {
   }
 
   /// Reconstruct receipt items from scattered OCR lines
-  static List<Map<String, dynamic>> _reconstructReceiptItems(List<String> lines) {
+  static List<Map<String, dynamic>> _reconstructReceiptItems(
+    List<String> lines,
+  ) {
     final items = <Map<String, dynamic>>[];
-    
+
     // Separate quantities, names, and prices
     final quantities = <int>[];
     final possibleNames = <String>[];
     final prices = <double>[];
-    
+
     for (final line in lines) {
       // Check if line is a standalone quantity (1, 2, 3, etc.)
       if (RegExp(r'^\d+$').hasMatch(line)) {
@@ -90,59 +88,63 @@ class OCRService {
           continue;
         }
       }
-      
+
       // Check if line is a price (ends with .00 or similar)
       final priceMatch = RegExp(r'^(\d+(?:\.\d{2})?)$').firstMatch(line);
       if (priceMatch != null) {
         final price = double.tryParse(priceMatch.group(1)!);
-        if (price != null && price > 1 && price <= 9999) { // Changed from > 0 to > 1 to avoid confusion with quantities
+        if (price != null && price > 1 && price <= 9999) {
+          // Changed from > 0 to > 1 to avoid confusion with quantities
           prices.add(price);
           continue;
         }
       }
-      
+
       // Otherwise, consider it a potential product name
       if (line.length > 1 && !_isNonItemLine(line)) {
         possibleNames.add(line);
       }
     }
-    
+
     if (kDebugMode) {
       print('Found quantities: $quantities');
       print('Found names: $possibleNames');
       print('Found prices: $prices');
     }
-    
+
     // Match quantities, names, and prices
-    final maxItems = [quantities.length, possibleNames.length, prices.length].reduce((a, b) => a > b ? a : b);
-    
+    final maxItems = [
+      quantities.length,
+      possibleNames.length,
+      prices.length,
+    ].reduce((a, b) => a > b ? a : b);
+
     for (int i = 0; i < maxItems; i++) {
       final quantity = i < quantities.length ? quantities[i] : 1;
       final name = i < possibleNames.length ? possibleNames[i] : 'รายการสินค้า';
       final price = i < prices.length ? prices[i] : 0.0;
-      
+
       if (price > 0) {
-        items.add({
-          'quantity': quantity,
-          'name': name,
-          'price': price,
-        });
+        items.add({'quantity': quantity, 'name': name, 'price': price});
       }
     }
-    
+
     return items;
   }
 
   /// Parse a reconstructed item data
-  static Item? _parseReconstructedItem(Map<String, dynamic> itemData, [int? index]) {
+  static Item? _parseReconstructedItem(
+    Map<String, dynamic> itemData, [
+    int? index,
+  ]) {
     try {
       String name = itemData['name'] as String;
       final price = itemData['price'] as double;
-      
+
       // Clean the name
       name = _cleanItemName(name);
       if (name.isEmpty) name = 'รายการสินค้า';
-      
+
       // Check if name contains readable English text, if not use generic name
       if (!_isReadableEnglishText(name)) {
         if (kDebugMode) {
@@ -154,20 +156,23 @@ class OCRService {
           print('Keeping readable name: "$name"');
         }
       }
-      
+
       // Generate unique ID and emoji
-      final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
+      final id =
+          '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
       // Force random emoji for generic names like "รายการสินค้า"
-      final isGenericName = name == 'รายการสินค้า' || name == 'สินค้า' || name == 'รายการ' || name == 'item';
-      final emoji = EmojiUtils.generateEmoji(name, additionalSeed: index, forceRandom: isGenericName);
-      
-      return Item(
-        id: id,
-        name: name,
-        price: price,
-        emoji: emoji,
-        ownerIds: [],
+      final isGenericName =
+          name == 'รายการสินค้า' ||
+          name == 'สินค้า' ||
+          name == 'รายการ' ||
+          name == 'item';
+      final emoji = EmojiUtils.generateEmoji(
+        name,
+        additionalSeed: index,
+        forceRandom: isGenericName,
       );
+
+      return Item(id: id, name: name, price: price, emoji: emoji, ownerIds: []);
     } catch (e) {
       if (kDebugMode) {
         print('Error parsing reconstructed item: $e');
@@ -179,36 +184,39 @@ class OCRService {
   /// Check if text contains readable English words
   static bool _isReadableEnglishText(String text) {
     if (text.isEmpty || text.length < 3) return false;
-    
+
     // Clean text for analysis
-    final cleanText = text.toLowerCase().replaceAll(RegExp(r'[^a-z\s]'), ' ').trim();
+    final cleanText = text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z\s]'), ' ')
+        .trim();
     if (cleanText.length < 3) return false;
-    
+
     if (kDebugMode) {
       print('Checking readability for: "$text" -> cleaned: "$cleanText"');
     }
-    
+
     // Check if it contains mostly English letters
     final englishChars = RegExp(r'[a-z]').allMatches(cleanText).length;
     final totalChars = cleanText.replaceAll(' ', '').length;
-    
+
     if (totalChars == 0) return false;
     final englishRatio = englishChars / totalChars;
-    
+
     if (kDebugMode) {
       print('English ratio: $englishRatio ($englishChars/$totalChars)');
     }
-    
+
     // Must be at least 50% English characters (lowered from 70%)
     if (englishRatio < 0.5) return false;
-    
+
     // Check for common English patterns or recognizable words
     final words = cleanText.split(RegExp(r'\s+'));
     int recognizableWords = 0;
-    
+
     for (final word in words) {
       if (word.length < 2) continue;
-      
+
       // Check for common English word patterns
       if (_isLikelyEnglishWord(word)) {
         recognizableWords++;
@@ -217,11 +225,11 @@ class OCRService {
         }
       }
     }
-    
+
     if (kDebugMode) {
       print('Recognizable words: $recognizableWords');
     }
-    
+
     // For garbled text, be more strict - require at least one recognizable word
     return recognizableWords > 0;
   }
@@ -229,37 +237,148 @@ class OCRService {
   /// Check if word looks like English
   static bool _isLikelyEnglishWord(String word) {
     if (word.length < 2) return false;
-    
+
     // Only accept actual common English words, not garbled text
     final commonEnglishWords = {
-      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 
-      'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 
-      'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 
-      'boy', 'did', 'man', 'men', 'run', 'she', 'too', 'use', 'very', 'what', 
-      'with', 'have', 'from', 'they', 'know', 'want', 'been', 'good', 'much', 
-      'some', 'time', 'will', 'year', 'your', 'come', 'could', 'each', 'first', 
-      'than', 'them', 'well', 'when', 'where', 'which', 'would', 'there', 'their', 
-      'said', 'about', 'after', 'again', 'before', 'being', 'every', 'great', 
-      'might', 'never', 'other', 'right', 'shall', 'still', 'these', 'those', 
-      'under', 'water', 'while', 'world', 'food', 'drink', 'cake', 'bread', 
-      'milk', 'coffee', 'tea', 'juice', 'beer', 'wine', 'soup', 
-      'rice', 'meat', 'fish', 'chicken', 'beef', 'pork', 'egg', 'cheese', 
-      'apple', 'banana', 'orange', 'pizza', 'burger', 'salad', 'sandwich'
+      'the',
+      'and',
+      'for',
+      'are',
+      'but',
+      'not',
+      'you',
+      'all',
+      'can',
+      'had',
+      'her',
+      'was',
+      'one',
+      'our',
+      'out',
+      'day',
+      'get',
+      'has',
+      'him',
+      'his',
+      'how',
+      'its',
+      'may',
+      'new',
+      'now',
+      'old',
+      'see',
+      'two',
+      'way',
+      'who',
+      'boy',
+      'did',
+      'man',
+      'men',
+      'run',
+      'she',
+      'too',
+      'use',
+      'very',
+      'what',
+      'with',
+      'have',
+      'from',
+      'they',
+      'know',
+      'want',
+      'been',
+      'good',
+      'much',
+      'some',
+      'time',
+      'will',
+      'year',
+      'your',
+      'come',
+      'could',
+      'each',
+      'first',
+      'than',
+      'them',
+      'well',
+      'when',
+      'where',
+      'which',
+      'would',
+      'there',
+      'their',
+      'said',
+      'about',
+      'after',
+      'again',
+      'before',
+      'being',
+      'every',
+      'great',
+      'might',
+      'never',
+      'other',
+      'right',
+      'shall',
+      'still',
+      'these',
+      'those',
+      'under',
+      'water',
+      'while',
+      'world',
+      'food',
+      'drink',
+      'cake',
+      'bread',
+      'milk',
+      'coffee',
+      'tea',
+      'juice',
+      'beer',
+      'wine',
+      'soup',
+      'rice',
+      'meat',
+      'fish',
+      'chicken',
+      'beef',
+      'pork',
+      'egg',
+      'cheese',
+      'apple',
+      'banana',
+      'orange',
+      'pizza',
+      'burger',
+      'salad',
+      'sandwich',
     };
-    
+
     // Check if it's a common English word
     if (commonEnglishWords.contains(word.toLowerCase())) {
       return true;
     }
-    
+
     // Check for common English endings
-    final englishSuffixes = ['ing', 'ed', 'er', 'est', 'ly', 'tion', 'ness', 'ment', 'able', 'ible'];
+    final englishSuffixes = [
+      'ing',
+      'ed',
+      'er',
+      'est',
+      'ly',
+      'tion',
+      'ness',
+      'ment',
+      'able',
+      'ible',
+    ];
     for (final suffix in englishSuffixes) {
       if (word.endsWith(suffix) && word.length > suffix.length + 2) {
         return true;
       }
     }
-    
+
     // Check for common English prefixes
     final englishPrefixes = ['un', 're', 'pre', 'dis', 'over', 'under'];
     for (final prefix in englishPrefixes) {
@@ -267,48 +386,61 @@ class OCRService {
         return true;
       }
     }
-    
+
     return false;
   }
-
-
-
-
 
   /// Try to parse items when names and prices are on separate lines
   static List<Item> _parseItemsWithSeparateLines(List<String> lines) {
     final items = <Item>[];
-    
+
     // Look for patterns where price follows item name on next line
     for (int i = 0; i < lines.length - 1; i++) {
       final nameLine = lines[i];
       final priceLine = lines[i + 1];
-      
+
       // Skip if name line is too short or looks like non-item
       if (nameLine.length < 3 || _isNonItemLine(nameLine)) continue;
-      
+
       // Check if next line looks like a price
-      final priceMatch = RegExp(r'^(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$', unicode: true).firstMatch(priceLine.trim());
-      
+      final priceMatch = RegExp(
+        r'^(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$',
+        unicode: true,
+      ).firstMatch(priceLine.trim());
+
       if (priceMatch != null) {
         try {
           final price = double.parse(priceMatch.group(1)!.replaceAll(',', '.'));
           final cleanName = _cleanItemName(nameLine);
-          
-          if (cleanName.isNotEmpty && cleanName.length >= 2 && price > 0 && price <= 99999) {
-            final id = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
+
+          if (cleanName.isNotEmpty &&
+              cleanName.length >= 2 &&
+              price > 0 &&
+              price <= 99999) {
+            final id =
+                '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
             // Force random emoji for generic names
-            final isGenericName = cleanName == 'รายการสินค้า' || cleanName == 'สินค้า' || cleanName == 'รายการ' || cleanName == 'item';
-            final emoji = EmojiUtils.generateEmoji(cleanName, additionalSeed: i, forceRandom: isGenericName);
-            
-            items.add(Item(
-              id: id,
-              name: cleanName,
-              price: price,
-              emoji: emoji,
-              ownerIds: [],
-            ));
-            
+            final isGenericName =
+                cleanName == 'รายการสินค้า' ||
+                cleanName == 'สินค้า' ||
+                cleanName == 'รายการ' ||
+                cleanName == 'item';
+            final emoji = EmojiUtils.generateEmoji(
+              cleanName,
+              additionalSeed: i,
+              forceRandom: isGenericName,
+            );
+
+            items.add(
+              Item(
+                id: id,
+                name: cleanName,
+                price: price,
+                emoji: emoji,
+                ownerIds: [],
+              ),
+            );
+
             if (kDebugMode) {
               print('Parsed separated item: $cleanName - $price');
             }
@@ -318,11 +450,9 @@ class OCRService {
         }
       }
     }
-    
+
     return items;
   }
-
-
 
   /// Check if a line should be skipped (not an item)
   static bool _isNonItemLine(String line) {
@@ -376,7 +506,9 @@ class OCRService {
     // Skip lines that are only numbers or only letters
     if (RegExp(r'^\d+$').hasMatch(line)) return true;
     if (RegExp(r'^[a-zA-Z\s]+$').hasMatch(line) && line.length < 4) return true;
-    if (RegExp(r'^[\u0E00-\u0E7F\s]+$', unicode: true).hasMatch(line) && line.length < 4) return true;
+    if (RegExp(r'^[\u0E00-\u0E7F\s]+$', unicode: true).hasMatch(line) &&
+        line.length < 4)
+      return true;
 
     // Skip lines that look like timestamps or IDs
     if (RegExp(r'\d{2}:\d{2}').hasMatch(line)) return true;
@@ -390,20 +522,29 @@ class OCRService {
     return name
         .replaceAll(RegExp(r'^\d+[\.\-\s]*'), '') // Remove leading numbers
         .replaceAll(RegExp(r'[x\*]\s*\d+$'), '') // Remove trailing quantity
-        .replaceAll(RegExp(r'\d+\s*ชิ้น$', unicode: true), '') // Remove Thai quantity
+        .replaceAll(
+          RegExp(r'\d+\s*ชิ้น$', unicode: true),
+          '',
+        ) // Remove Thai quantity
         .replaceAll(RegExp(r'\s*[\-\:]\s*$'), '') // Remove trailing separators
-        .replaceAll(RegExp(r'\s*ราคา\s*$', unicode: true), '') // Remove trailing "ราคา"
+        .replaceAll(
+          RegExp(r'\s*ราคา\s*$', unicode: true),
+          '',
+        ) // Remove trailing "ราคา"
         .trim();
   }
 
   /// Validate OCR results and provide suggestions
-  static Map<String, dynamic> validateOCRResults(List<Item> items, {String? rawText}) {
+  static Map<String, dynamic> validateOCRResults(
+    List<Item> items, {
+    String? rawText,
+  }) {
     final issues = <String>[];
     final suggestions = <String>[];
 
     if (items.isEmpty) {
       issues.add('ไม่พบรายการใดจากการสแกน');
-      
+
       // Check if OCR detected garbled text (common with poor image quality)
       if (rawText != null && _isGarbledText(rawText)) {
         suggestions.add('รูปภาพไม่ชัดเจน กรุณา:');
@@ -482,20 +623,25 @@ class OCRService {
   /// Check if OCR text appears to be garbled/corrupted
   static bool _isGarbledText(String text) {
     if (text.trim().isEmpty) return false;
-    
+
     // Count invalid characters (non-Thai, non-English, non-numbers, non-common symbols)
-    final invalidChars = RegExp(r'[^\w\s\d\.\-:฿,บาทราคาชิ้น\u0E00-\u0E7F\u0020-\u007E]', unicode: true);
+    final invalidChars = RegExp(
+      r'[^\w\s\d\.\-:฿,บาทราคาชิ้น\u0E00-\u0E7F\u0020-\u007E]',
+      unicode: true,
+    );
     final invalidMatches = invalidChars.allMatches(text).length;
-    
+
     // If more than 30% of characters are invalid, consider it garbled
     final totalChars = text.replaceAll(RegExp(r'\s'), '').length;
     if (totalChars == 0) return false;
-    
+
     final invalidRatio = invalidMatches / totalChars;
-    
+
     // Also check for sequences of random characters
-    final hasRandomSequences = RegExp(r'[a-zA-Z]{3,}[^\s\u0E00-\u0E7F]{2,}').hasMatch(text);
-    
+    final hasRandomSequences = RegExp(
+      r'[a-zA-Z]{3,}[^\s\u0E00-\u0E7F]{2,}',
+    ).hasMatch(text);
+
     return invalidRatio > 0.3 || hasRandomSequences;
   }
 
