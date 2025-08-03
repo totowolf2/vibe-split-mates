@@ -27,76 +27,9 @@ class OCRService {
     }
   }
 
-  /// Enhance Thai text recognition through post-processing
-  static String _enhanceThaiTextRecognition(String rawText) {
-    if (rawText.isEmpty) return rawText;
-    
-    String enhanced = rawText;
-    
-    // Common OCR mistakes for Thai characters - fix them
-    final thaiCorrections = {
-      // Common misreads
-      'yaL': 'ก',
-      'ĂnlaslӦ': 'กุ้งทอด',
-      'Srif': '',
-      'enauu': 'เนื้อ',
-      'Lws': 'ลาบ',
-      'sn': 'หมู',
-      '5înL5u': 'ส้มตำ',
-      'nán': 'หมั่น',
-      'nẩuN': 'เหนือ',
-      // Common character confusions
-      'Ă': 'ั',
-      'ӦĦ': 'ำ',
-      'Â': 'ี',
-      'Ê': 'ื',
-      'Ô': 'ุ',
-      'Û': 'ู',
-      // Number corrections
-      '0O': '00',
-      'o0': '00',
-    };
-    
-    // Apply corrections
-    thaiCorrections.forEach((wrong, correct) {
-      enhanced = enhanced.replaceAll(wrong, correct);
-    });
-    
-    // Clean up extra spaces and invalid characters
-    enhanced = enhanced
-        .replaceAll(RegExp(r'[^\w\s\d\.\-:฿,บาทราคาชิ้น\u0E00-\u0E7F\u0020-\u007E]', unicode: true), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    
-    // If we still have garbled text, try to extract numbers at least
-    if (_isGarbledText(enhanced)) {
-      enhanced = _extractNumbersFromGarbledText(rawText);
-    }
-    
-    return enhanced;
-  }
 
-  /// Extract price numbers from garbled text when OCR fails on Thai
-  static String _extractNumbersFromGarbledText(String garbledText) {
-    final lines = garbledText.split('\n');
-    final cleanLines = <String>[];
-    
-    for (final line in lines) {
-      // Look for price patterns even in garbled text
-      final priceMatches = RegExp(r'(\d{1,4}(?:[,\.]\d{2})?)')
-          .allMatches(line);
-      
-      if (priceMatches.isNotEmpty) {
-        for (final match in priceMatches) {
-          final price = match.group(1)!;
-          // Add a generic Thai item name with the price
-          cleanLines.add('รายการสินค้า $price');
-        }
-      }
-    }
-    
-    return cleanLines.join('\n');
-  }
+
+
 
   /// Parse items from OCR text with improved Thai receipt format handling
   static List<Item> parseItemsFromText(String text) {
@@ -309,7 +242,7 @@ class OCRService {
       'said', 'about', 'after', 'again', 'before', 'being', 'every', 'great', 
       'might', 'never', 'other', 'right', 'shall', 'still', 'these', 'those', 
       'under', 'water', 'while', 'world', 'food', 'drink', 'cake', 'bread', 
-      'milk', 'water', 'coffee', 'tea', 'juice', 'beer', 'wine', 'soup', 
+      'milk', 'coffee', 'tea', 'juice', 'beer', 'wine', 'soup', 
       'rice', 'meat', 'fish', 'chicken', 'beef', 'pork', 'egg', 'cheese', 
       'apple', 'banana', 'orange', 'pizza', 'burger', 'salad', 'sandwich'
     };
@@ -338,98 +271,9 @@ class OCRService {
     return false;
   }
 
-  /// Check if text has English-like structure
-  static bool _hasEnglishStructure(String text) {
-    // Check for reasonable vowel-consonant distribution
-    final vowels = RegExp(r'[aeiou]').allMatches(text).length;
-    final consonants = RegExp(r'[bcdfghjklmnpqrstvwxyz]').allMatches(text).length;
-    final total = vowels + consonants;
-    
-    if (total == 0) return false;
-    
-    final vowelRatio = vowels / total;
-    // English typically has 35-45% vowels
-    return vowelRatio >= 0.2 && vowelRatio <= 0.6;
-  }
 
-  /// Parse a single line as an item
-  static Item? _parseLineAsItem(String line) {
-    try {
-      // Clean the line
-      final cleanLine = _cleanLine(line);
 
-      // Skip lines that are too short or clearly not items
-      if (cleanLine.length < 3) return null;
-      if (_isNonItemLine(cleanLine)) return null;
 
-      // Try different patterns to extract name and price
-      final patterns = [
-        // Pattern 1: "Item Name 12.50" or "Item Name ฿12.50"
-        RegExp(r'^(.+?)\s+(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$', unicode: true),
-
-        // Pattern 2: "Item Name     12.50" (multiple spaces)
-        RegExp(r'^(.+?)\s{2,}(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$', unicode: true),
-
-        // Pattern 3: "Item Name x1 12.50" or "Item Name 1x 12.50" or "Item Name 1 ชิ้น 12.50"
-        RegExp(r'^(.+?)\s*(?:x?\d+|ชิ้น|\d+x?|\d+\s*ชิ้น)\s*(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$', unicode: true),
-
-        // Pattern 4: "12.50 Item Name" (price first)
-        RegExp(r'^(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)\s*(?:บาท)?\s+(.+?)$', unicode: true),
-
-        // Pattern 5: "Item Name - 12.50" or "Item Name : 12.50"
-        RegExp(r'^(.+?)\s*[-:]\s*(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$', unicode: true),
-
-        // Pattern 6: Thai specific patterns
-        RegExp(r'^(.+?)\s+(?:ราคา|ราคา:\s*)?(?:฿|บาท)?(\d+(?:[,\.]\d{1,2})?)(?:\s*บาท)?$', unicode: true),
-      ];
-
-      for (final pattern in patterns) {
-        final match = pattern.firstMatch(cleanLine);
-        if (match != null) {
-          String name;
-          double price;
-
-          if (patterns.indexOf(pattern) == 3) {
-            // Pattern 4: price first
-            price = double.parse(match.group(1)!.replaceAll(',', '.'));
-            name = match.group(2)!.trim();
-          } else {
-            // Other patterns: name first
-            name = match.group(1)!.trim();
-            price = double.parse(match.group(2)!.replaceAll(',', '.'));
-          }
-
-          // Validate extracted data
-          if (name.isEmpty || price <= 0 || price > 99999) continue;
-
-          // Clean the name
-          name = _cleanItemName(name);
-          if (name.isEmpty || name.length < 2) continue;
-
-          // Generate unique ID and emoji
-          final id =
-              '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000}';
-          // Force random emoji for generic names  
-          final isGenericName = name == 'รายการสินค้า' || name == 'สินค้า' || name == 'รายการ' || name == 'item';
-          final emoji = EmojiUtils.generateEmoji(name, additionalSeed: DateTime.now().microsecond, forceRandom: isGenericName);
-
-          return Item(
-            id: id,
-            name: name,
-            price: price,
-            emoji: emoji,
-            ownerIds: [], // Will be set later when user selects owners
-          );
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error parsing line "$line": $e');
-      }
-    }
-
-    return null;
-  }
 
   /// Try to parse items when names and prices are on separate lines
   static List<Item> _parseItemsWithSeparateLines(List<String> lines) {
@@ -478,16 +322,7 @@ class OCRService {
     return items;
   }
 
-  /// Clean a line for better parsing
-  static String _cleanLine(String line) {
-    return line
-        .replaceAll(
-          RegExp(r'[^\w\s\d\.\-:฿,บาทราคาชิ้น\u0E00-\u0E7F]', unicode: true),
-          '',
-        ) // Remove special chars except common ones and Thai characters
-        .replaceAll(RegExp(r'\s+'), ' ') // Normalize whitespace
-        .trim();
-  }
+
 
   /// Check if a line should be skipped (not an item)
   static bool _isNonItemLine(String line) {

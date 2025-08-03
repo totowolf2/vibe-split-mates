@@ -4,7 +4,7 @@ import '../models/item.dart';
 import '../models/person.dart';
 import '../utils/constants.dart';
 import 'person_avatar.dart';
-import 'default_item_icon.dart';
+
 
 class ItemCard extends StatefulWidget {
   final Item item;
