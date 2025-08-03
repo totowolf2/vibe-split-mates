@@ -35,6 +35,41 @@
 # Keep image gallery saver classes
 -keep class com.example.image_gallery_saver.** { *; }
 
+# Keep gal plugin classes
+-keep class io.github.yoshida_wada.gal.** { *; }
+-dontwarn io.github.yoshida_wada.gal.**
+
+# Keep permission handler classes
+-keep class com.baseflow.permissionhandler.** { *; }
+-dontwarn com.baseflow.permissionhandler.**
+
+# Keep all Flutter plugin classes
+-keep class io.flutter.plugins.** { *; }
+-dontwarn io.flutter.plugins.**
+
+# Keep native Android permissions
+-keep class android.permission.** { *; }
+
+# Don't obfuscate classes that might be accessed via reflection
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepattributes EnclosingMethod
+-keepattributes InnerClasses
+
+# Keep all Dart/Flutter related classes
+-keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.plugin.** { *; }
+
+# Remove debug prints in release
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+    public static int e(...);
+}
+
 # Keep Flutter classes
 -keep class io.flutter.** { *; }
 -dontwarn io.flutter.**

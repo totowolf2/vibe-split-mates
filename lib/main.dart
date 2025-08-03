@@ -1189,7 +1189,7 @@ class _BottomButtonsSection extends StatelessWidget {
 
   const _BottomButtonsSection({required this.summaryKey});
 
-  void _exportImage(BuildContext context) async {
+  Future<void> _exportImage(BuildContext context) async {
     final billProvider = context.read<BillProvider>();
 
     // Check if there's anything to export
@@ -1214,15 +1214,24 @@ class _BottomButtonsSection extends StatelessWidget {
 
     // Validate widget is ready for export
     if (!ExportService.validateForExport(summaryKey)) {
-      AppHelpers.showSnackBar(
-        context,
-        'กรุณารอสักครู่แล้วลองใหม่',
-        backgroundColor: Colors.orange,
-      );
-      return;
+      // Add a small delay and try again
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      if (!ExportService.validateForExport(summaryKey)) {
+        if (context.mounted) {
+          AppHelpers.showSnackBar(
+            context,
+            'ไม่สามารถส่งออกได้ กรุณาลองใหม่',
+            backgroundColor: Colors.orange,
+          );
+        }
+        return;
+      }
     }
 
     // Show loading
+    if (!context.mounted) return;
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1248,7 +1257,8 @@ class _BottomButtonsSection extends StatelessWidget {
       final filename = ExportService.generateFileName();
 
       // Calculate optimal pixel ratio
-      final pixelRatio = ExportService.getOptimalPixelRatio(context);
+      final pixelRatio = context.mounted ? 
+          ExportService.getOptimalPixelRatio(context) : 2.0;
 
       // Export the image
       final success = await ExportService.exportWidgetAsImage(

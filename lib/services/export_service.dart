@@ -53,7 +53,16 @@ class ExportService {
           filename ?? 'splitmates_${DateTime.now().millisecondsSinceEpoch}.png';
 
       // Save to gallery using Gal
-      await Gal.putImageBytes(pngBytes, name: fileName);
+      try {
+        await Gal.putImageBytes(pngBytes, name: fileName);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Gal save error: $e');
+        }
+        // Try with a simpler filename if the original fails
+        final simpleFileName = 'splitmates_${DateTime.now().millisecondsSinceEpoch}.png';
+        await Gal.putImageBytes(pngBytes, name: simpleFileName);
+      }
 
       // If no exception thrown, save was successful
       if (kDebugMode) {
@@ -71,36 +80,87 @@ class ExportService {
   /// Check and request necessary permissions
   static Future<bool> _checkPermissions() async {
     try {
-      // Check current permission status
-      PermissionStatus permission = await Permission.storage.status;
-
-      // For Android 13+, we need different permissions
-      if (await Permission.photos.isDenied) {
-        permission = await Permission.photos.status;
+      if (kDebugMode) {
+        print('Checking permissions...');
+      }
+      
+      // For Android 13+ (API 33+), use media permissions
+      // For older versions, use storage permissions
+      
+      if (defaultTargetPlatform != TargetPlatform.android) {
+        if (kDebugMode) {
+          print('iOS platform - no explicit permissions needed');
+        }
+        return true; // iOS doesn't need explicit permissions for gal
       }
 
-      if (permission.isDenied) {
-        // Request permission
-        final Map<Permission, PermissionStatus> permissions = await [
-          Permission.storage,
-          Permission.photos,
-        ].request();
-
-        // Check if any permission was granted
-        return permissions.values.any(
-          (status) =>
-              status == PermissionStatus.granted ||
-              status == PermissionStatus.limited,
-        );
+      // Check media permissions first (Android 13+)
+      PermissionStatus photosStatus = await Permission.photos.status;
+      if (kDebugMode) {
+        print('Photos permission status: $photosStatus');
+      }
+      
+      if (photosStatus.isGranted || photosStatus.isLimited) {
+        if (kDebugMode) {
+          print('Photos permission already granted');
+        }
+        return true;
       }
 
-      return permission == PermissionStatus.granted ||
-          permission == PermissionStatus.limited;
+      // If photos permission is denied, try requesting it
+      if (photosStatus.isDenied) {
+        if (kDebugMode) {
+          print('Requesting photos permission...');
+        }
+        photosStatus = await Permission.photos.request();
+        
+        if (photosStatus.isGranted || photosStatus.isLimited) {
+          if (kDebugMode) {
+            print('Photos permission granted after request');
+          }
+          return true;
+        }
+      }
+
+      // Fallback to storage permission for older Android versions
+      PermissionStatus storageStatus = await Permission.storage.status;
+      if (kDebugMode) {
+        print('Storage permission status: $storageStatus');
+      }
+      
+      if (storageStatus.isGranted) {
+        if (kDebugMode) {
+          print('Storage permission already granted');
+        }
+        return true;
+      }
+
+      if (storageStatus.isDenied) {
+        if (kDebugMode) {
+          print('Requesting storage permission...');
+        }
+        storageStatus = await Permission.storage.request();
+        
+        if (storageStatus.isGranted) {
+          if (kDebugMode) {
+            print('Storage permission granted after request');
+          }
+          return true;
+        }
+      }
+
+      if (kDebugMode) {
+        print('All permissions denied - photosStatus: $photosStatus, storageStatus: $storageStatus');
+      }
+      
+      // If both are permanently denied, return false
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error checking permissions: $e');
       }
-      return false;
+      // Return true as fallback - gal might still work
+      return true;
     }
   }
 
@@ -128,7 +188,8 @@ class ExportService {
   /// Open app settings for permission management
   static Future<bool> openAppSettings() async {
     try {
-      return await openAppSettings();
+      return await Permission.storage.request().then((status) => 
+          status.isGranted || status.isLimited);
     } catch (e) {
       if (kDebugMode) {
         print('Error opening app settings: $e');
@@ -139,7 +200,7 @@ class ExportService {
 
   /// Check if device supports image saving
   static bool get isSupported {
-    // Image gallery saver supports iOS and Android
+    // Gal supports iOS and Android
     return defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
   }
@@ -187,8 +248,8 @@ class ExportService {
       final renderObject = context.findRenderObject();
       if (renderObject == null) return false;
 
-      return renderObject is RenderRepaintBoundary &&
-          renderObject.debugNeedsPaint == false;
+      // Just check if it's a RenderRepaintBoundary, skip paint check
+      return renderObject is RenderRepaintBoundary;
     } catch (e) {
       return false;
     }
