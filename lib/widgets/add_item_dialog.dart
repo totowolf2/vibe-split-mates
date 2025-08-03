@@ -241,10 +241,10 @@ class _AddItemDialogState extends State<AddItemDialog> {
                       TextFormField(
                         controller: _priceController,
                         decoration: InputDecoration(
-                          labelText: 'ราคา (${AppConstants.currencySymbol})',
+                          labelText: 'ราคา (${AppConstants.currencyText})',
                           hintText: '0.00',
                           border: const OutlineInputBorder(),
-                          prefixText: AppConstants.currencySymbol,
+                          prefixText: '${AppConstants.currencyText} ',
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
@@ -263,10 +263,10 @@ class _AddItemDialogState extends State<AddItemDialog> {
                             return 'กรุณาใส่ตัวเลขที่ถูกต้อง';
                           }
                           if (price < AppConstants.minItemPrice) {
-                            return 'ราคาต้องมากกว่า ${AppConstants.currencySymbol}${AppConstants.minItemPrice}';
+                            return 'ราคาต้องมากกว่า ${AppConstants.minItemPrice} ${AppConstants.currencyText}';
                           }
                           if (price > AppConstants.maxItemPrice) {
-                            return 'ราคาต้องน้อยกว่า ${AppConstants.currencySymbol}${AppConstants.maxItemPrice}';
+                            return 'ราคาต้องน้อยกว่า ${AppConstants.maxItemPrice} ${AppConstants.currencyText}';
                           }
                           return null;
                         },

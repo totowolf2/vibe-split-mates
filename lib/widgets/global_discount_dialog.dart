@@ -109,18 +109,18 @@ class _GlobalDiscountDialogState extends State<GlobalDiscountDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ยอดรวมก่อนลด: ${AppConstants.currencySymbol}${widget.billSubtotal.toStringAsFixed(2)}',
+                      'ยอดรวมก่อนลด: ${widget.billSubtotal.toStringAsFixed(0)} ${AppConstants.currencyText}',
                       style: AppTextStyles.bodyStyle,
                     ),
                     if (_previewDiscountAmount > 0) ...[
                       Text(
-                        'ส่วนลดรวม: ${AppConstants.currencySymbol}${_previewDiscountAmount.toStringAsFixed(2)}',
+                        'ส่วนลดรวม: ${_previewDiscountAmount.toStringAsFixed(0)} ${AppConstants.currencyText}',
                         style: AppTextStyles.captionStyle.copyWith(
                           color: Colors.red.shade600,
                         ),
                       ),
                       Text(
-                        'ยอดสุทธิ: ${AppConstants.currencySymbol}${_previewTotal.toStringAsFixed(2)}',
+                        'ยอดสุทธิ: ${_previewTotal.toStringAsFixed(0)} ${AppConstants.currencyText}',
                         style: AppTextStyles.priceStyle.copyWith(
                           color: Colors.green.shade600,
                           fontWeight: FontWeight.bold,
@@ -147,7 +147,7 @@ class _GlobalDiscountDialogState extends State<GlobalDiscountDialog> {
                   Expanded(
                     child: RadioListTile<DiscountType>(
                       title: const Text('จำนวนเงิน'),
-                      subtitle: Text(AppConstants.currencySymbol),
+                      subtitle: Text(AppConstants.currencyText),
                       value: DiscountType.amount,
                       groupValue: _discountType,
                       onChanged: (value) {
@@ -193,7 +193,7 @@ class _GlobalDiscountDialogState extends State<GlobalDiscountDialog> {
                       : '100.00',
                   border: const OutlineInputBorder(),
                   prefixText: _discountType == DiscountType.amount
-                      ? AppConstants.currencySymbol
+                      ? '${AppConstants.currencyText} '
                       : null,
                   suffixText: _discountType == DiscountType.percentage
                       ? '%'
@@ -247,7 +247,7 @@ class _GlobalDiscountDialogState extends State<GlobalDiscountDialog> {
                       }).toList()
                     : [50, 100, 200, 500].map((amount) {
                         return ActionChip(
-                          label: Text('${AppConstants.currencySymbol}$amount'),
+                          label: Text('$amount ${AppConstants.currencyText}'),
                           onPressed: () {
                             _valueController.text = amount.toString();
                             setState(() {});

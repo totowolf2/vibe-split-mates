@@ -193,83 +193,63 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
               margin: const EdgeInsets.symmetric(vertical: 4.0),
               child: ListTile(
                 onTap: _showOwnerSelectionDialog, // เพิ่ม onTap เพื่อเลือกคนที่แชร์
-                leading: widget.item.emoji == '🍽️' 
-                  ? const DefaultItemIcon(size: 24)
-                  : Text(
+                leading: Text(
                       widget.item.emoji,
                       style: AppTextStyles.emojiStyle,
                     ),
                 title: Text(widget.item.name, style: AppTextStyles.bodyStyle),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    widget.item.ownerIds.isEmpty 
-                      ? Text(
-                          'แตะเพื่อเลือกคนที่แชร์',
-                          style: AppTextStyles.captionStyle.copyWith(
-                            color: Colors.orange.shade600,
-                            fontStyle: FontStyle.italic,
+                subtitle: widget.item.hasDiscount
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '${widget.item.discountedPrice.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                style: AppTextStyles.discountedPriceStyle,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${widget.item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                style: AppTextStyles.originalPriceStyle,
+                              ),
+                            ],
                           ),
-                        )
-                      : Row(
-                          children: [
-                            Text(
-                              'แชร์กับ: ',
-                              style: AppTextStyles.captionStyle,
+                          Text(
+                            'ลด ${(widget.item.price - widget.item.discountedPrice).toStringAsFixed(0)} ${AppConstants.currencyText}',
+                            style: AppTextStyles.captionStyle.copyWith(
+                              color: Colors.green.shade600,
+                              fontWeight: FontWeight.w600,
                             ),
-                            ...widget.item.ownerIds.map((id) {
-                              final person = widget.people.firstWhere(
-                                (p) => p.id == id,
-                                orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
-                              );
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: PersonAvatar(person: person, size: 20, emojiAsIcon: true),
-                              );
-                            }),
-                          ],
-                        ),
-                    if (widget.item.hasDiscount)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Row(
-                          children: [
-                            Text(
-                              '${AppConstants.currencySymbol}${widget.item.discountedPrice.toStringAsFixed(2)}',
-                              style: AppTextStyles.discountedPriceStyle,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${AppConstants.currencySymbol}${widget.item.price.toStringAsFixed(2)}',
-                              style: AppTextStyles.originalPriceStyle,
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        '${widget.item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                        style: AppTextStyles.priceStyle,
                       ),
-                  ],
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      widget.item.hasDiscount
-                          ? '${AppConstants.currencySymbol}${widget.item.discountedPrice.toStringAsFixed(2)}'
-                          : '${AppConstants.currencySymbol}${widget.item.price.toStringAsFixed(2)}',
-                      style: widget.item.hasDiscount
-                          ? AppTextStyles.discountedPriceStyle
-                          : AppTextStyles.priceStyle,
-                    ),
-                    if (widget.item.hasDiscount)
-                      Text(
-                        'ลด ${AppConstants.currencySymbol}${widget.item.discount.toStringAsFixed(2)}',
+                trailing: widget.item.ownerIds.isEmpty 
+                    ? Text(
+                        'แตะเพื่อเลือกคนที่แชร์',
                         style: AppTextStyles.captionStyle.copyWith(
-                          color: Colors.green.shade600,
-                          fontWeight: FontWeight.w600,
+                          color: Colors.orange.shade600,
+                          fontStyle: FontStyle.italic,
+                          fontSize: 12,
                         ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: widget.item.ownerIds.map((id) {
+                          final person = widget.people.firstWhere(
+                            (p) => p.id == id,
+                            orElse: () => Person(id: id, name: 'Unknown', avatar: '❓'),
+                          );
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: PersonAvatar(person: person, size: 24, emojiAsIcon: true),
+                          );
+                        }).toList(),
                       ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -360,18 +340,18 @@ class _DiscountDialogState extends State<_DiscountDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ราคาเดิม: ${AppConstants.currencySymbol}${widget.currentPrice.toStringAsFixed(2)}',
+                      'ราคาเดิม: ${widget.currentPrice.toStringAsFixed(0)} ${AppConstants.currencyText}',
                       style: AppTextStyles.bodyStyle,
                     ),
                     if (_previewDiscount > 0) ...[
                       Text(
-                        'ลด: ${AppConstants.currencySymbol}${_previewDiscount.toStringAsFixed(2)}',
+                        'ลด: ${_previewDiscount.toStringAsFixed(0)} ${AppConstants.currencyText}',
                         style: AppTextStyles.captionStyle.copyWith(
                           color: Colors.red.shade600,
                         ),
                       ),
                       Text(
-                        'ราคาใหม่: ${AppConstants.currencySymbol}${_previewPrice.toStringAsFixed(2)}',
+                        'ราคาใหม่: ${_previewPrice.toStringAsFixed(0)} ${AppConstants.currencyText}',
                         style: AppTextStyles.priceStyle.copyWith(
                           color: Colors.green.shade600,
                           fontWeight: FontWeight.bold,
@@ -429,7 +409,7 @@ class _DiscountDialogState extends State<_DiscountDialog> {
                   border: const OutlineInputBorder(),
                   prefixText: _isPercentage
                       ? null
-                      : AppConstants.currencySymbol,
+                      : '${AppConstants.currencyText} ',
                   suffixText: _isPercentage ? '%' : null,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
@@ -472,7 +452,7 @@ class _DiscountDialogState extends State<_DiscountDialog> {
                       }).toList()
                     : [10, 20, 50, 100].map((amount) {
                         return ActionChip(
-                          label: Text('${AppConstants.currencySymbol}$amount'),
+                          label: Text('$amount ${AppConstants.currencyText}'),
                           onPressed: () {
                             _discountController.text = amount.toString();
                             setState(() {});

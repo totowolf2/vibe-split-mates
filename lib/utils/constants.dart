@@ -38,7 +38,8 @@ class AppConstants {
   static const double maxSwipeDistance = 100.0;
 
   // Currency formatting
-  static const String currencySymbol = '฿'; // Thai Baht
+  static const String currencySymbol = '฿'; // Thai Baht (for internal use)
+  static const String currencyText = 'บาท'; // Thai text for display
   static const String currencyCode = 'THB';
 
   // Shared Preferences Keys

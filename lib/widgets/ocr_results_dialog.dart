@@ -306,7 +306,7 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          '${AppConstants.currencySymbol}${item.price.toStringAsFixed(2)}',
+                                          '${item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
                                           style: AppTextStyles.priceStyle.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -561,7 +561,7 @@ class _EditItemDialogState extends State<_EditItemDialog> {
               TextFormField(
                 controller: _priceController,
                 decoration: InputDecoration(
-                  labelText: 'ราคา (${AppConstants.currencySymbol})',
+                  labelText: 'ราคา (${AppConstants.currencyText})',
                   border: const OutlineInputBorder(),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
