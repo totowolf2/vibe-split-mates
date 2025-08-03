@@ -206,18 +206,18 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
                           Row(
                             children: [
                               Text(
-                                '${widget.item.discountedPrice.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                '${widget.item.discountedPrice.toStringAsFixed(2)} ${AppConstants.currencyText}',
                                 style: AppTextStyles.discountedPriceStyle,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                '${widget.item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                '${widget.item.price.toStringAsFixed(2)} ${AppConstants.currencyText}',
                                 style: AppTextStyles.originalPriceStyle,
                               ),
                             ],
                           ),
                           Text(
-                            'ลด ${(widget.item.price - widget.item.discountedPrice).toStringAsFixed(0)} ${AppConstants.currencyText}',
+                            'ลด ${(widget.item.price - widget.item.discountedPrice).toStringAsFixed(2)} ${AppConstants.currencyText}',
                             style: AppTextStyles.captionStyle.copyWith(
                               color: Colors.green.shade600,
                               fontWeight: FontWeight.w600,
@@ -226,7 +226,7 @@ class _ItemCardState extends State<ItemCard> with TickerProviderStateMixin {
                         ],
                       )
                     : Text(
-                        '${widget.item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                        '${widget.item.price.toStringAsFixed(2)} ${AppConstants.currencyText}',
                         style: AppTextStyles.priceStyle,
                       ),
                 trailing: widget.item.ownerIds.isEmpty
@@ -346,18 +346,18 @@ class _DiscountDialogState extends State<_DiscountDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ราคาเดิม: ${widget.currentPrice.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                      'ราคาเดิม: ${widget.currentPrice.toStringAsFixed(2)} ${AppConstants.currencyText}',
                       style: AppTextStyles.bodyStyle,
                     ),
                     if (_previewDiscount > 0) ...[
                       Text(
-                        'ลด: ${_previewDiscount.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                        'ลด: ${_previewDiscount.toStringAsFixed(2)} ${AppConstants.currencyText}',
                         style: AppTextStyles.captionStyle.copyWith(
                           color: Colors.red.shade600,
                         ),
                       ),
                       Text(
-                        'ราคาใหม่: ${_previewPrice.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                        'ราคาใหม่: ${_previewPrice.toStringAsFixed(2)} ${AppConstants.currencyText}',
                         style: AppTextStyles.priceStyle.copyWith(
                           color: Colors.green.shade600,
                           fontWeight: FontWeight.bold,

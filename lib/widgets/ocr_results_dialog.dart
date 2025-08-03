@@ -93,7 +93,11 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
         .toList(); // เอาการตรวจสอบ ownerIds.isNotEmpty ออก
 
     if (selectedItems.isEmpty) {
-      AppHelpers.showSnackBar(context, 'กรุณาเลือกรายการ', backgroundColor: Colors.orange);
+      AppHelpers.showSnackBar(
+        context,
+        'กรุณาเลือกรายการ',
+        backgroundColor: Colors.orange,
+      );
       return;
     }
 
@@ -303,7 +307,7 @@ class _OCRResultsDialogState extends State<OCRResultsDialog> {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            '${item.price.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                            '${item.price.toStringAsFixed(2)} ${AppConstants.currencyText}',
                                             style: AppTextStyles.priceStyle
                                                 .copyWith(
                                                   fontWeight: FontWeight.bold,

@@ -109,18 +109,18 @@ class _GlobalDiscountDialogState extends State<GlobalDiscountDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ยอดรวมก่อนลด: ${widget.billSubtotal.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                      'ยอดรวมก่อนลด: ${widget.billSubtotal.toStringAsFixed(2)} ${AppConstants.currencyText}',
                       style: AppTextStyles.bodyStyle,
                     ),
                     if (_previewDiscountAmount > 0) ...[
                       Text(
-                        'ส่วนลดรวม: ${_previewDiscountAmount.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                        'ส่วนลดรวม: ${_previewDiscountAmount.toStringAsFixed(2)} ${AppConstants.currencyText}',
                         style: AppTextStyles.captionStyle.copyWith(
                           color: Colors.red.shade600,
                         ),
                       ),
                       Text(
-                        'ยอดสุทธิ: ${_previewTotal.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                        'ยอดสุทธิ: ${_previewTotal.toStringAsFixed(2)} ${AppConstants.currencyText}',
                         style: AppTextStyles.priceStyle.copyWith(
                           color: Colors.green.shade600,
                           fontWeight: FontWeight.bold,

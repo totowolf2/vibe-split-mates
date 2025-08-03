@@ -93,8 +93,8 @@ class OCRService {
       final priceMatch = RegExp(r'^(\d+(?:\.\d{2})?)$').firstMatch(line);
       if (priceMatch != null) {
         final price = double.tryParse(priceMatch.group(1)!);
-        if (price != null && price > 1 && price <= 9999) {
-          // Changed from > 0 to > 1 to avoid confusion with quantities
+        if (price != null && price > 0 && price <= 9999) {
+          // Allow all positive prices including small amounts like 0.40
           prices.add(price);
           continue;
         }

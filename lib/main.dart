@@ -1035,7 +1035,7 @@ class _SummarySection extends StatelessWidget {
                               style: AppTextStyles.bodyStyle,
                             ),
                             Text(
-                              '${billProvider.subtotal.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                              '${billProvider.subtotal.toStringAsFixed(2)} ${AppConstants.currencyText}',
                               style: AppTextStyles.bodyStyle,
                             ),
                           ],
@@ -1052,7 +1052,7 @@ class _SummarySection extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '-${billProvider.globalDiscountAmount.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                '-${billProvider.globalDiscountAmount.toStringAsFixed(2)} ${AppConstants.currencyText}',
                                 style: AppTextStyles.captionStyle.copyWith(
                                   color: Colors.red.shade600,
                                 ),
@@ -1071,7 +1071,7 @@ class _SummarySection extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${billProvider.total.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                              '${billProvider.total.toStringAsFixed(2)} ${AppConstants.currencyText}',
                               style: AppTextStyles.priceStyle.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green.shade700,
@@ -1146,7 +1146,7 @@ class _SummarySection extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${amountToPay.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                '${amountToPay.toStringAsFixed(2)} ${AppConstants.currencyText}',
                                 style: AppTextStyles.priceStyle.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green.shade700,
@@ -1161,7 +1161,7 @@ class _SummarySection extends StatelessWidget {
                                 const SizedBox(width: 32), // Space for emoji
                                 Expanded(
                                   child: Text(
-                                    '${AppConstants.discountReceivedLabel} ${discountReceived.toStringAsFixed(0)} ${AppConstants.currencyText}',
+                                    '${AppConstants.discountReceivedLabel} ${discountReceived.toStringAsFixed(2)} ${AppConstants.currencyText}',
                                     style: AppTextStyles.captionStyle.copyWith(
                                       color: Colors.orange.shade600,
                                     ),
