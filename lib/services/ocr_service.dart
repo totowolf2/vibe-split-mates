@@ -276,6 +276,15 @@ class OCRService {
   static bool _isReadableEnglishText(String text) {
     if (text.isEmpty || text.length < 3) return false;
 
+    // First check for obvious non-English characters that indicate garbled OCR
+    // Reject text with accented letters, special symbols, or weird Unicode characters
+    if (RegExp(r'[^a-zA-Z0-9\s\-\.\,]').hasMatch(text)) {
+      if (kDebugMode) {
+        print('Rejecting "$text" due to non-English characters');
+      }
+      return false;
+    }
+
     // Clean text for analysis
     final cleanText = text
         .toLowerCase()
@@ -298,78 +307,144 @@ class OCRService {
       print('English ratio: $englishRatio ($englishChars/$totalChars)');
     }
 
-    // Must be at least 50% English characters (lowered from 70%)
-    if (englishRatio < 0.5) return false;
+    // Must be at least 70% English characters (more strict)
+    if (englishRatio < 0.7) return false;
 
-    // Check for common English patterns or recognizable words
+    // Simple heuristics for readable English text
     final words = cleanText.split(RegExp(r'\s+'));
-    int recognizableWords = 0;
+    int validWords = 0;
 
     for (final word in words) {
       if (word.length < 2) continue;
-
-      // Check for common English word patterns
-      if (_isLikelyEnglishWord(word)) {
-        recognizableWords++;
+      
+      // Simple checks for English-like words
+      if (_isEnglishLikeWord(word)) {
+        validWords++;
         if (kDebugMode) {
-          print('Found recognizable word: "$word"');
+          print('Found valid word: "$word"');
         }
       }
     }
 
     if (kDebugMode) {
-      print('Recognizable words: $recognizableWords');
+      print('Valid words: $validWords');
     }
 
-    // For garbled text, be more strict - require at least one recognizable word
-    return recognizableWords > 0;
+    // Accept if at least 50% of words look English-like (more strict)
+    return validWords >= (words.length * 0.5).ceil();
   }
 
   /// Check if word looks like English
-  static bool _isLikelyEnglishWord(String word) {
+  static bool _isEnglishLikeWord(String word) {
     if (word.length < 2) return false;
 
-    // Only accept actual common English words, not garbled text
-    final commonEnglishWords = {
+    // Reject words with non-English characters (accented letters, symbols, etc.)
+    if (RegExp(r'[^a-z]').hasMatch(word)) return false;
+    
+    // Must contain at least one vowel
+    final vowelCount = RegExp(r'[aeiou]').allMatches(word).length;
+    if (vowelCount == 0) return false;
+    
+    // Check vowel to consonant ratio (should have reasonable balance)
+    final consonantCount = word.length - vowelCount;
+    if (consonantCount == 0) return false; // All vowels is unlikely
+    
+    final vowelRatio = vowelCount / word.length;
+    // English words typically have 15-70% vowels (more relaxed)
+    if (vowelRatio < 0.15 || vowelRatio > 0.7) return false;
+    
+    // Reject obvious garbage patterns only
+    // Avoid sequences of 4+ consonants or vowels (very rare in English)
+    if (RegExp(r'[bcdfghjklmnpqrstvwxyz]{4,}').hasMatch(word) ||
+        RegExp(r'[aeiou]{4,}').hasMatch(word)) {
+      return false;
+    }
+    
+    // Check for common English word patterns (more comprehensive)
+    final commonStarts = [
+      'th', 'st', 'ch', 'sh', 'wh', 'br', 'cr', 'dr', 'fr', 'gr', 'pr', 'tr', 
+      'bl', 'cl', 'fl', 'gl', 'pl', 'sl', 'sc', 'sk', 'sm', 'sn', 'sp', 'sw'
+    ];
+    final commonEndings = [
+      'ed', 'ing', 'er', 'est', 'ly', 'tion', 'ness', 'ment', 'able', 'ible',
+      'ful', 'less', 'ous', 'ive', 'ate', 'ize', 'ise', 'ity', 'al', 'ic', 'en', 'an', 'or', 'ar'
+    ];
+    
+    bool hasCommonPattern = false;
+    
+    // Check prefixes (if word is long enough)
+    if (word.length >= 3) {
+      final start = word.substring(0, 2);
+      if (commonStarts.contains(start)) {
+        hasCommonPattern = true;
+      }
+    }
+    
+    // Check suffixes (if word is long enough)
+    if (word.length >= 3) {
+      for (final ending in commonEndings) {
+        if (word.endsWith(ending) && word.length > ending.length) {
+          hasCommonPattern = true;
+          break;
+        }
+      }
+    }
+    
+    // Extended list of common English words
+    final commonWords = [
+      // Basic words
       'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had',
       'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his',
       'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who',
-      'boy', 'did', 'man', 'men', 'run', 'she', 'too', 'use', 'very', 'what',
-      'with', 'have', 'from', 'they', 'know', 'want', 'been', 'good', 'much',
-      'some', 'time', 'will', 'year', 'your', 'come', 'could', 'each', 'first',
-      'than', 'them', 'well', 'when', 'where', 'which', 'would', 'there',
-      'their', 'said', 'about', 'after', 'again', 'before', 'being', 'every',
-      'great', 'might', 'never', 'other', 'right', 'shall', 'still', 'these',
-      'those', 'under', 'water', 'while', 'world', 'food', 'drink', 'cake',
-      'bread', 'milk', 'coffee', 'tea', 'juice', 'beer', 'wine', 'soup',
-      'rice', 'meat', 'fish', 'chicken', 'beef', 'pork', 'egg', 'cheese',
-      'apple', 'banana', 'orange', 'pizza', 'burger', 'salad', 'sandwich',
-    };
-
-    // Check if it's a common English word
-    if (commonEnglishWords.contains(word.toLowerCase())) {
-      return true;
-    }
-
-    // Check for common English endings
-    final englishSuffixes = [
-      'ing', 'ed', 'er', 'est', 'ly', 'tion', 'ness', 'ment', 'able', 'ible',
+      'man', 'men', 'run', 'she', 'too', 'use', 'what', 'with', 'have', 'from',
+      'they', 'know', 'want', 'been', 'good', 'much', 'some', 'time', 'will',
+      'come', 'each', 'first', 'than', 'them', 'well', 'when', 'where',
+      // Common product/food words
+      'food', 'drink', 'cake', 'bread', 'milk', 'coffee', 'tea', 'juice', 'water',
+      'meat', 'fish', 'chicken', 'beef', 'rice', 'egg', 'cheese', 'pizza', 'burger',
+      'apple', 'banana', 'orange', 'salad', 'sandwich', 'soup', 'pasta', 'noodle',
+      // Latin words commonly used (Lorem Ipsum style)
+      'lorem', 'ipsum', 'dolor', 'sit', 'amet', 'adipiscing', 'elit', 'sed', 'tempor',
+      'incididunt', 'labore', 'dolore', 'magna', 'aliqua', 'enim', 'minim', 'veniam',
+      'quis', 'nostrud', 'exercitation', 'ullamco', 'laboris', 'nisi', 'aliquip',
+      'commodo', 'consequat', 'duis', 'aute', 'irure', 'reprehenderit', 'voluptate',
+      'velit', 'esse', 'cillum', 'fugiat', 'nulla', 'pariatur', 'excepteur', 'sint',
+      'occaecat', 'cupidatat', 'proident', 'sunt', 'culpa', 'officia', 'deserunt',
+      'mollit', 'anim', 'laborum'
     ];
-    for (final suffix in englishSuffixes) {
-      if (word.endsWith(suffix) && word.length > suffix.length + 2) {
-        return true;
-      }
+    
+    if (commonWords.contains(word)) {
+      hasCommonPattern = true;
     }
-
-    // Check for common English prefixes
-    final englishPrefixes = ['un', 're', 'pre', 'dis', 'over', 'under'];
-    for (final prefix in englishPrefixes) {
-      if (word.startsWith(prefix) && word.length > prefix.length + 2) {
-        return true;
-      }
+    
+    // For very short words (2-3 letters), be more lenient
+    if (word.length <= 3) {
+      return vowelRatio >= 0.25 && vowelRatio <= 0.75;
     }
+    
+    // For longer words, still accept if they have reasonable structure, even without common patterns
+    if (vowelRatio >= 0.2 && vowelRatio <= 0.6) {
+      return true; // Much more relaxed - accept most reasonable looking words
+    }
+    
+    return hasCommonPattern;
+  }
 
-    return false;
+  /// Clean item name
+  static String _cleanItemName(String name) {
+    return name
+        .replaceAll(RegExp(r'^\d+[\.\-\s]*'), '') // Remove leading numbers
+        .replaceAll(RegExp(r'[x\*]\s*\d+$'), '') // Remove trailing quantity
+        .replaceAll(
+          RegExp(r'\d+\s*ชิ้น$', unicode: true),
+          '',
+        ) // Remove Thai quantity
+        .replaceAll(RegExp(r'\s*[\-\:]\s*$'), '') // Remove trailing separators
+        .replaceAll(
+          RegExp(r'\s*ราคา\s*$', unicode: true),
+          '',
+        ) // Remove trailing "ราคา"
+        .trim();
   }
 
   /// Try to parse items when names and prices are on separate lines
@@ -467,23 +542,6 @@ class OCRService {
     if (RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(line)) return true;
 
     return false;
-  }
-
-  /// Clean item name
-  static String _cleanItemName(String name) {
-    return name
-        .replaceAll(RegExp(r'^\d+[\.\-\s]*'), '') // Remove leading numbers
-        .replaceAll(RegExp(r'[x\*]\s*\d+$'), '') // Remove trailing quantity
-        .replaceAll(
-          RegExp(r'\d+\s*ชิ้น$', unicode: true),
-          '',
-        ) // Remove Thai quantity
-        .replaceAll(RegExp(r'\s*[\-\:]\s*$'), '') // Remove trailing separators
-        .replaceAll(
-          RegExp(r'\s*ราคา\s*$', unicode: true),
-          '',
-        ) // Remove trailing "ราคา"
-        .trim();
   }
 
   /// Validate OCR results and provide suggestions
