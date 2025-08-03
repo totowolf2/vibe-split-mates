@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 
@@ -52,25 +52,17 @@ class ExportService {
       final String fileName =
           filename ?? 'splitmates_${DateTime.now().millisecondsSinceEpoch}.png';
 
-      // Save to gallery
-      final result = await ImageGallerySaver.saveImage(
+      // Save to gallery using Gal
+      await Gal.putImageBytes(
         pngBytes,
         name: fileName,
-        isReturnImagePathOfIOS: true,
       );
-
-      // Check if save was successful
-      if (result != null && result['isSuccess'] == true) {
-        if (kDebugMode) {
-          print('Image saved successfully: ${result['filePath']}');
-        }
-        return true;
-      } else {
-        if (kDebugMode) {
-          print('Failed to save image: $result');
-        }
-        return false;
+      
+      // If no exception thrown, save was successful
+      if (kDebugMode) {
+        print('Image saved successfully: $fileName');
       }
+      return true;
     } catch (e) {
       if (kDebugMode) {
         print('Error exporting image: $e');
