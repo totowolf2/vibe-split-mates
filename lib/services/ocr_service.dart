@@ -42,8 +42,13 @@ class OCRService {
       print('Processing ${rawLines.length} lines from OCR');
     }
 
-    // Try parsing raw text first (before enhancement)
-    final reconstructedItems = _reconstructReceiptItems(rawLines);
+    // Try structured receipt format first (like Walmart receipts)
+    var reconstructedItems = _parseStructuredReceipt(rawLines);
+    
+    // If no structured items found, use regular parsing
+    if (reconstructedItems.isEmpty) {
+      reconstructedItems = _reconstructReceiptItems(rawLines);
+    }
 
     for (int i = 0; i < reconstructedItems.length; i++) {
       final itemData = reconstructedItems[i];
@@ -63,6 +68,92 @@ class OCRService {
 
     if (kDebugMode) {
       print('Total parsed items: ${items.length}');
+    }
+
+    return items;
+  }
+
+  /// Parse structured receipt format (like Walmart receipts)
+  static List<Map<String, dynamic>> _parseStructuredReceipt(
+    List<String> lines,
+  ) {
+    final items = <Map<String, dynamic>>[];
+    final itemNames = <String>[];
+    final itemPrices = <double>[];
+
+    for (final line in lines) {
+      final trimmedLine = line.trim();
+      
+      // Skip header/footer lines
+      if (_isNonItemLine(trimmedLine)) continue;
+      
+      // Check if line is a price (multiple formats)
+      RegExpMatch? priceMatch;
+      
+      // Format 1: "1.97 X" (Walmart style) 
+      priceMatch = RegExp(r'^(\d+\.\d{2})\s*[XONF-]').firstMatch(trimmedLine);
+      
+      // Format 2: "$ 35.00" or "$35.00"
+      priceMatch ??= RegExp(r'^\$\s*(\d+\.\d{2})$').firstMatch(trimmedLine);
+      
+      // Format 3: Just numbers "35.00"  
+      priceMatch ??= RegExp(r'^(\d+\.\d{2})$').firstMatch(trimmedLine);
+      
+      if (priceMatch != null) {
+        final price = double.tryParse(priceMatch.group(1)!);
+        if (price != null && price > 0) {
+          itemPrices.add(price);
+          continue;
+        }
+      }
+      
+      // Check if line looks like an item name 
+      if ((RegExp(r'^[A-Z][A-Z\s\d\.]+$').hasMatch(trimmedLine) || 
+           RegExp(r'^\d+[xX]\s+[A-Za-z\s]+$').hasMatch(trimmedLine)) && 
+          !RegExp(r'^\d+$').hasMatch(trimmedLine) &&
+          !RegExp(r'^\$').hasMatch(trimmedLine) &&
+          trimmedLine.length >= 3 &&
+          trimmedLine.length <= 50) {
+        
+        // Clean the name - remove quantity prefix and barcodes
+        String cleanName = trimmedLine
+            .replaceAll(RegExp(r'^\d+[xX]\s+'), '') // Remove "1x ", "2X " etc
+            .replaceAll(RegExp(r'\s+\d{10,}'), '') // Remove barcodes
+            .trim();
+        if (cleanName.length >= 3) {
+          itemNames.add(cleanName);
+        }
+      }
+    }
+
+    if (kDebugMode) {
+      print('Found item names: $itemNames');
+      print('Found item prices: $itemPrices');
+    }
+
+    // Match names with prices (use all available names, even if more prices exist)
+    final itemCount = itemNames.length;
+    
+    for (int i = 0; i < itemCount; i++) {
+      String name = itemNames[i];
+      
+      // Truncate long names
+      if (name.length > 20) {
+        name = '${name.substring(0, 17)}...';
+      }
+      
+      // Only add if we have a corresponding price
+      if (i < itemPrices.length) {
+        items.add({
+          'quantity': 1,
+          'name': name,
+          'price': itemPrices[i],
+        });
+      }
+
+      if (kDebugMode && i < itemPrices.length) {
+        print('Structured receipt item: $name - ${itemPrices[i]}');
+      }
     }
 
     return items;
@@ -240,119 +331,19 @@ class OCRService {
 
     // Only accept actual common English words, not garbled text
     final commonEnglishWords = {
-      'the',
-      'and',
-      'for',
-      'are',
-      'but',
-      'not',
-      'you',
-      'all',
-      'can',
-      'had',
-      'her',
-      'was',
-      'one',
-      'our',
-      'out',
-      'day',
-      'get',
-      'has',
-      'him',
-      'his',
-      'how',
-      'its',
-      'may',
-      'new',
-      'now',
-      'old',
-      'see',
-      'two',
-      'way',
-      'who',
-      'boy',
-      'did',
-      'man',
-      'men',
-      'run',
-      'she',
-      'too',
-      'use',
-      'very',
-      'what',
-      'with',
-      'have',
-      'from',
-      'they',
-      'know',
-      'want',
-      'been',
-      'good',
-      'much',
-      'some',
-      'time',
-      'will',
-      'year',
-      'your',
-      'come',
-      'could',
-      'each',
-      'first',
-      'than',
-      'them',
-      'well',
-      'when',
-      'where',
-      'which',
-      'would',
-      'there',
-      'their',
-      'said',
-      'about',
-      'after',
-      'again',
-      'before',
-      'being',
-      'every',
-      'great',
-      'might',
-      'never',
-      'other',
-      'right',
-      'shall',
-      'still',
-      'these',
-      'those',
-      'under',
-      'water',
-      'while',
-      'world',
-      'food',
-      'drink',
-      'cake',
-      'bread',
-      'milk',
-      'coffee',
-      'tea',
-      'juice',
-      'beer',
-      'wine',
-      'soup',
-      'rice',
-      'meat',
-      'fish',
-      'chicken',
-      'beef',
-      'pork',
-      'egg',
-      'cheese',
-      'apple',
-      'banana',
-      'orange',
-      'pizza',
-      'burger',
-      'salad',
-      'sandwich',
+      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had',
+      'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his',
+      'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who',
+      'boy', 'did', 'man', 'men', 'run', 'she', 'too', 'use', 'very', 'what',
+      'with', 'have', 'from', 'they', 'know', 'want', 'been', 'good', 'much',
+      'some', 'time', 'will', 'year', 'your', 'come', 'could', 'each', 'first',
+      'than', 'them', 'well', 'when', 'where', 'which', 'would', 'there',
+      'their', 'said', 'about', 'after', 'again', 'before', 'being', 'every',
+      'great', 'might', 'never', 'other', 'right', 'shall', 'still', 'these',
+      'those', 'under', 'water', 'while', 'world', 'food', 'drink', 'cake',
+      'bread', 'milk', 'coffee', 'tea', 'juice', 'beer', 'wine', 'soup',
+      'rice', 'meat', 'fish', 'chicken', 'beef', 'pork', 'egg', 'cheese',
+      'apple', 'banana', 'orange', 'pizza', 'burger', 'salad', 'sandwich',
     };
 
     // Check if it's a common English word
@@ -362,16 +353,7 @@ class OCRService {
 
     // Check for common English endings
     final englishSuffixes = [
-      'ing',
-      'ed',
-      'er',
-      'est',
-      'ly',
-      'tion',
-      'ness',
-      'ment',
-      'able',
-      'ible',
+      'ing', 'ed', 'er', 'est', 'ly', 'tion', 'ness', 'ment', 'able', 'ible',
     ];
     for (final suffix in englishSuffixes) {
       if (word.endsWith(suffix) && word.length > suffix.length + 2) {
@@ -460,43 +442,12 @@ class OCRService {
 
     // Skip common receipt headers/footers
     final skipPatterns = [
-      'receipt',
-      'total',
-      'subtotal',
-      'tax',
-      'vat',
-      'discount',
-      'change',
-      'cash',
-      'card',
-      'credit',
-      'thank',
-      'welcome',
-      'address',
-      'phone',
-      'date',
-      'time',
-      'store',
-      'shop',
-      'company',
-      'ltd',
-      'co',
-      'ใบเสร็จ',
-      'รวม',
-      'ยอดรวม',
-      'ภาษี',
-      'ส่วนลด',
-      'เงินทอน',
-      'เงินสด',
-      'บัตร',
-      'ขอบคุณ',
-      'ยินดีต้อนรับ',
-      'ที่อยู่',
-      'เบอร์',
-      'วันที่',
-      'เวลา',
-      'ร้าน',
-      'บริษัท',
+      'receipt', 'total', 'subtotal', 'tax', 'vat', 'discount', 'change',
+      'cash', 'card', 'credit', 'thank', 'welcome', 'address', 'phone',
+      'date', 'time', 'store', 'shop', 'company', 'ltd', 'co',
+      'ใบเสร็จ', 'รวม', 'ยอดรวม', 'ภาษี', 'ส่วนลด', 'เงินทอน', 'เงินสด',
+      'บัตร', 'ขอบคุณ', 'ยินดีต้อนรับ', 'ที่อยู่', 'เบอร์', 'วันที่', 'เวลา',
+      'ร้าน', 'บริษัท',
     ];
 
     for (final pattern in skipPatterns) {
@@ -507,8 +458,9 @@ class OCRService {
     if (RegExp(r'^\d+$').hasMatch(line)) return true;
     if (RegExp(r'^[a-zA-Z\s]+$').hasMatch(line) && line.length < 4) return true;
     if (RegExp(r'^[\u0E00-\u0E7F\s]+$', unicode: true).hasMatch(line) &&
-        line.length < 4)
+        line.length < 4) {
       return true;
+    }
 
     // Skip lines that look like timestamps or IDs
     if (RegExp(r'\d{2}:\d{2}').hasMatch(line)) return true;
