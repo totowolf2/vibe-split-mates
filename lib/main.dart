@@ -618,11 +618,70 @@ class _PeopleSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // All saved people
-                      Text(
-                        'คนที่บันทึกไว้:',
-                        style: AppTextStyles.captionStyle.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            'คนที่บันทึกไว้:',
+                            style: AppTextStyles.captionStyle.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          // Select All / Clear buttons
+                          if (billProvider.savedPeople.isNotEmpty) ...[
+                            TextButton(
+                              onPressed: () {
+                                // Add all saved people to bill
+                                for (final person in billProvider.savedPeople) {
+                                  if (!billProvider.people.any((p) => p.id == person.id)) {
+                                    billProvider.addPersonToBill(person);
+                                  }
+                                }
+                                AppHelpers.showSnackBar(
+                                  context,
+                                  'เพิ่มทุกคนเข้าบิลแล้ว',
+                                  backgroundColor: Colors.green,
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppConstants.primaryColor,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'เลือกทั้งหมด',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                // Remove all people from bill
+                                final peopleToRemove = List<String>.from(
+                                  billProvider.people.map((p) => p.id),
+                                );
+                                for (final personId in peopleToRemove) {
+                                  billProvider.removePersonFromBill(personId);
+                                }
+                                AppHelpers.showSnackBar(
+                                  context,
+                                  'ลบทุกคนออกจากบิลแล้ว',
+                                  backgroundColor: Colors.orange,
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red.shade600,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'ล้าง',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: AppConstants.smallPadding),
                       Wrap(
