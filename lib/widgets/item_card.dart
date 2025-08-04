@@ -573,38 +573,114 @@ class _OwnerSelectionDialogState extends State<_OwnerSelectionDialog> {
             else ...[
               // Quick selection buttons
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton.icon(
+                  OutlinedButton.icon(
                     onPressed: _selectAllOwners,
                     icon: const Icon(Icons.group, size: 16),
                     label: const Text('ทุกคน'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppConstants.primaryColor,
+                      side: BorderSide(color: AppConstants.primaryColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: _clearAllOwners,
                     icon: const Icon(Icons.clear, size: 16),
                     label: const Text('ล้าง'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
                   ),
                 ],
               ),
 
-              // People selection
+              const SizedBox(height: AppConstants.defaultPadding),
+
+              // Modern chip-based people selection
               Container(
                 constraints: const BoxConstraints(maxHeight: 200),
                 child: SingleChildScrollView(
-                  child: Column(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: widget.availablePeople.map((person) {
                       final isSelected = _selectedOwnerIds.contains(person.id);
-                      return CheckboxListTile(
-                        value: isSelected,
-                        onChanged: (_) => _toggleOwner(person.id),
-                        title: Row(
-                          children: [
-                            PersonAvatar(person: person, size: 32),
-                            const SizedBox(width: 8),
-                            Text(person.name),
-                          ],
+                      return GestureDetector(
+                        onTap: () => _toggleOwner(person.id),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppConstants.primaryColor.withValues(alpha: 0.2)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppConstants.primaryColor
+                                  : Colors.grey.shade300,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Stack(
+                                children: [
+                                  PersonAvatar(
+                                    person: person,
+                                    size: 28,
+                                    showBorder: false,
+                                  ),
+                                  if (isSelected)
+                                    Positioned(
+                                      right: -2,
+                                      top: -2,
+                                      child: Container(
+                                        width: 16,
+                                        height: 16,
+                                        decoration: BoxDecoration(
+                                          color: AppConstants.primaryColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.check,
+                                          size: 10,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                person.name,
+                                style: TextStyle(
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? AppConstants.primaryColor
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        dense: true,
                       );
                     }).toList(),
                   ),
@@ -617,12 +693,25 @@ class _OwnerSelectionDialogState extends State<_OwnerSelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.grey.shade600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
           child: const Text('ยกเลิก'),
         ),
         ElevatedButton(
           onPressed: widget.availablePeople.isEmpty
               ? null
               : () => Navigator.of(context).pop(_selectedOwnerIds),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppConstants.primaryColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
           child: const Text('บันทึก'),
         ),
       ],
